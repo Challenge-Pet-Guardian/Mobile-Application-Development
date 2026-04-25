@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "pet-guardian",
+    "slug": "pet-guardian",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.anonymous.petguardian"
+    }
+  }
+}
