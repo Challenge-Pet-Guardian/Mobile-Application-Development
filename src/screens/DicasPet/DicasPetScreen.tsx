@@ -1,9 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { STORAGE_RASCUNHO } from "../../constants/Keys";
+import { Header } from "../../components/Header";
 
-export default function Exercicio2() {
+export default function DicasPet() {
     const [rascunho, setRascunho] = useState("");
     const [salvamento, setSalvamento] = useState("");
 
@@ -50,23 +52,28 @@ export default function Exercicio2() {
     }, []);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Rascunho 2000</Text>
+        <SafeAreaView style={{ flex: 1 }}>
+            <View>
+                <Header title="Dicas Pet" />
+            </View>
+            <View style={styles.container}>
+                <Text style={styles.title}>Rascunho 2000</Text>
 
-            <TextInput
-                style={styles.input}
-                multiline={true}
-                placeholder="Digite seu texto aqui"
-                onChangeText={onChangeRascunho}
-                value={rascunho}
-            />
+                <TextInput
+                    style={styles.input}
+                    multiline={true}
+                    placeholder="Digite seu texto aqui"
+                    onChangeText={onChangeRascunho}
+                    value={rascunho}
+                />
 
-            <Text style={{ fontSize: 16 }}>Último Salvamento: {salvamento}</Text>
+                <Text style={{ fontSize: 16 }}>Último Salvamento: {salvamento}</Text>
 
-            <TouchableOpacity style={styles.buttonApagar} onPress={onClear}>
-                <Text style={{ fontSize: 20 }}>Apagar Rascunho!</Text>
-            </TouchableOpacity>
-        </View>
+                <TouchableOpacity style={styles.buttonApagar} onPress={onClear}>
+                    <Text style={{ fontSize: 20 }}>Apagar Rascunho!</Text>
+                </TouchableOpacity>
+            </View>
+        </SafeAreaView>
     );
 }
 

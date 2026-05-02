@@ -1,9 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View, StyleSheet, TouchableOpacityProps } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { STORAGE_PERFIL } from "../../constants/Keys";
+import { Header } from "../../components/Header";
 
-export default function Exercicio3(_: TouchableOpacityProps) {
+export default function UserProfile(_: TouchableOpacityProps) {
     const [perfil, setPerfil] = useState({
         nome: "",
         email: "",
@@ -69,61 +71,66 @@ export default function Exercicio3(_: TouchableOpacityProps) {
     }, []);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Perfil Ultra Master Blaster</Text>
-            <View style={styles.inputContainer}>
-                <Text style={styles.textInput}>Nome:</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Digite seu Nome"
-                    value={perfil.nome}
-                    onChangeText={(text) => setPerfil({ ...perfil, nome: text })}
-                />
+        <SafeAreaView style={{ flex: 1 }}>
+            <View>
+                <Header title="Perfil" />
             </View>
-            <View style={styles.inputContainer}>
-                <Text style={styles.textInput}>Email:</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Digite seu Email"
-                    value={perfil.email}
-                    onChangeText={(text) => setPerfil({ ...perfil, email: text })}
-                    keyboardType="email-address" 
-                />
-            </View>
-            <View style={styles.inputContainer}>
-                <Text style={styles.textInput}>Idade:</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Digite sua Idade"
-                    value={perfil.idade}
-                    onChangeText={(text) => setPerfil({ ...perfil, idade: text })}
-                    keyboardType="numeric"
-                />
-            </View>
-            <TouchableOpacity
-                style={styles.buttonSalvar}
-                activeOpacity={0.7}
-                onPress={onSavePerfil}
-            >
-                <Text style={styles.textButtons}>Salvar Perfil</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.buttonApagar}
-                activeOpacity={0.7}
-                onPress={onClear}
-            >
-                <Text style={styles.textButtons}>Apagar Perfil</Text>
-            </TouchableOpacity>
+            <View style={styles.container}>
+                <Text style={styles.title}>Perfil Usuário</Text>
+                <View style={styles.inputContainer}>
+                    <Text style={styles.textInput}>Nome:</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Digite seu Nome"
+                        value={perfil.nome}
+                        onChangeText={(text) => setPerfil({ ...perfil, nome: text })}
+                    />
+                </View>
+                <View style={styles.inputContainer}>
+                    <Text style={styles.textInput}>Email:</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Digite seu Email"
+                        value={perfil.email}
+                        onChangeText={(text) => setPerfil({ ...perfil, email: text })}
+                        keyboardType="email-address"
+                    />
+                </View>
+                <View style={styles.inputContainer}>
+                    <Text style={styles.textInput}>Idade:</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Digite sua Idade"
+                        value={perfil.idade}
+                        onChangeText={(text) => setPerfil({ ...perfil, idade: text })}
+                        keyboardType="numeric"
+                    />
+                </View>
+                <TouchableOpacity
+                    style={styles.buttonSalvar}
+                    activeOpacity={0.7}
+                    onPress={onSavePerfil}
+                >
+                    <Text style={styles.textButtons}>Salvar Perfil</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.buttonApagar}
+                    activeOpacity={0.7}
+                    onPress={onClear}
+                >
+                    <Text style={styles.textButtons}>Apagar Perfil</Text>
+                </TouchableOpacity>
 
-            {
-                PerfilSalvo && (
-                    <View style={styles.perfilCarregado}>
-                        <Text>Perfil carregado do dispositivo</Text>
-                    </View>
-                )
-            }
+                {
+                    PerfilSalvo && (
+                        <View style={styles.perfilCarregado}>
+                            <Text>Perfil carregado do dispositivo</Text>
+                        </View>
+                    )
+                }
 
-        </View>
+            </View>
+        </SafeAreaView>
     );
 }
 
