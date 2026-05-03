@@ -17,8 +17,7 @@ export function TabRoutes() {
             tabBarInactiveTintColor: '#747474',
             tabBarStyle: {
                 backgroundColor: '#000',
-                position: 'absolute',
-                bottom: 30,
+                bottom: 20,
                 marginHorizontal: 20,
                 borderRadius: 17,
                 borderTopWidth: 0,

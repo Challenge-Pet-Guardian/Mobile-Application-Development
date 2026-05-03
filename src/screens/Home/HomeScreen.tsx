@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import { Text, View, ScrollView, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { Text, View, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Entypo, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { Header } from "../../components/Header";
+import { StreakCard } from "../../components/streakCard";
 
 // Interface das Tarefas
 interface Tarefa {
@@ -85,22 +86,10 @@ export default function Home() {
         ));
     };
 
-    // Helper para renderizar o ícone de acordo com o status
-    const renderIcon = (status: StreakDay['status']) => {
-        switch (status) {
-            case 'feito':
-                return <MaterialCommunityIcons name="fire" size={16} color="#FFF" />;
-            case 'perdido':
-                return <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#FFF" />;
-            case 'hoje':
-                return <FontAwesome5 name="paw" size={14} color="#FFF" />;
-            case 'futuro':
-                return null; // Dias futuros não tem ícone, ficam mais limpos
-        }
-    };
+
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'bottom', 'right']}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
                 <Header title="Home" />
@@ -120,40 +109,7 @@ export default function Home() {
                 </View>
 
                 {/* 2. WEEKLY STREAK DINÂMICO */}
-                <View style={styles.streakCard}>
-                    <View style={styles.streakHeader}>
-                        <Text style={styles.sectionTitle}>Ofensiva da Semana</Text>
-                        <View style={styles.totalStreakBadge}>
-                            <MaterialCommunityIcons name="fire" size={18} color="#FF9600" />
-                            <Text style={styles.totalStreakText}>12 dias</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.streakRow}>
-                        {streakDays.map((item) => (
-                            <View key={item.id} style={styles.streakColumn}>
-                                <View
-                                    style={[
-                                        styles.streakDayCircle,
-                                        item.status === 'feito' && styles.streakCompleted,
-                                        item.status === 'perdido' && styles.streakMissed,
-                                        item.status === 'hoje' && styles.streakToday,
-                                        item.status === 'futuro' && styles.streakFuture
-                                    ]}
-                                >
-                                    {renderIcon(item.status)}
-                                    <Text style={[
-                                        styles.streakDayText,
-                                        item.status === 'futuro' && styles.streakDayTextFuture
-                                    ]}>
-                                        {item.dayNumber}
-                                    </Text>
-                                </View>
-                                <Text style={styles.streakDayLabel}>{item.dayLabel}</Text>
-                            </View>
-                        ))}
-                    </View>
-                </View>
+                <StreakCard streakDays={streakDays} />
 
                 {/* 3. STATUS & NEXT TASK */}
                 <View style={styles.highlightCard}>
@@ -241,7 +197,7 @@ export default function Home() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F4F7FA' },
-    scrollContent: { padding: 24, paddingBottom: 120, gap: 20 },
+    scrollContent: { padding: 24, gap: 20 },
 
     // Pet Profile
     petProfileContainer: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 5, marginBottom: 10 },
@@ -250,27 +206,6 @@ const styles = StyleSheet.create({
     petInfoContainer: { flex: 1, justifyContent: 'center' },
     petName: { fontSize: 32, fontWeight: 'bold', color: '#000', marginBottom: 4 },
     petStatus: { fontSize: 16, color: '#000', fontWeight: '600' },
-
-    // Streak Card
-    streakCard: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#E2E8F0' },
-    streakHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-    totalStreakBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFBEB', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#FFE4B5' },
-    totalStreakText: { fontSize: 14, fontWeight: 'bold', color: '#FF9600', marginLeft: 4 },
-    streakRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-
-    // Nova estrutura em colunas para comportar o círculo + texto do dia embaixo
-    streakColumn: { alignItems: 'center', gap: 6 },
-    streakDayCircle: { width: 42, height: 56, borderRadius: 21, alignItems: 'center', justifyContent: 'center', gap: 2 },
-
-    // Variações de Status
-    streakCompleted: { backgroundColor: '#00A859' }, // Verde
-    streakMissed: { backgroundColor: '#FF6565' },    // Vermelho Amigável
-    streakToday: { backgroundColor: '#1CB0F6' },     // Azul (Dia atual)
-    streakFuture: { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' }, // Futuro (Apagado)
-
-    streakDayText: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
-    streakDayTextFuture: { color: '#94A3B8' }, // Texto cinza para o futuro
-    streakDayLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' }, // S, T, Q, Q...
 
     // Highlight Card
     highlightCard: { backgroundColor: '#1CB0F6', borderRadius: 24, padding: 20, shadowColor: '#1CB0F6', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
