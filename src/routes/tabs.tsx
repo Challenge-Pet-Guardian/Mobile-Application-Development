@@ -1,50 +1,68 @@
+import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Home from '../screens/Home/HomeScreen';
-import FamilyPet from '../screens/FamilyPet/FamilyPetScreen';
-import DicasPet from '../screens/DicasPet/DicasPetScreen';
-import UserProfile from '../screens/UserProfile/UserProfileScreen';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
+import Home from '../screens/Home/HomeScreen';
+import DicasPet from '../screens/DicasPet/DicasPetScreen';
+import UserProfile from '../screens/UserProfile/UserProfileScreen';
+import FamilyStack from './FamilyStack';
 
-const { Navigator, Screen } = createBottomTabNavigator();
+const Tab = createBottomTabNavigator();
 
-export function TabRoutes() {
-    return (
-        <Navigator id='tab-routes' screenOptions={{
-            headerShown: false,
-            tabBarActiveTintColor: '#4784ff',
-            tabBarInactiveTintColor: '#747474',
-            tabBarStyle: {
-                backgroundColor: '#000',
-                bottom: 20,
-                marginHorizontal: 20,
-                borderRadius: 17,
-                borderTopWidth: 0,
-                elevation: 5,
-                height: 60,
-            },
-        }}>
-            <Screen name='Home' component={Home} options={{
-                tabBarIcon: ({ color, size }) => (
-                    <FontAwesome name="home" size={size} color={color} />
-                )
-            }} />
-            <Screen name='Family Pet' component={FamilyPet} options={{
-                tabBarIcon: ({ color, size }) => (
-                    <FontAwesome name="paw" size={size} color={color} />
-                )
-            }} />
-            <Screen name='Dicas Pet' component={DicasPet} options={{
-                tabBarIcon: ({ color, size }) => (
-                    <MaterialIcons name="tips-and-updates" size={size} color={color} />
-                )
-            }} />
-            <Screen name='User Profile' component={UserProfile} options={{
-                tabBarIcon: ({ color, size }) => (
-                    <FontAwesome name="user" size={size} color={color} />
-                )
-            }} />
-        </Navigator>
-    )
+export default function Tabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#000',
+          height: 60
+        },
+        tabBarActiveTintColor: '#0066ff',
+        tabBarInactiveTintColor: '#999'
+      }}
+    >
+      <Tab.Screen
+        name="Home"
+        component={Home}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="home" color={color} size={size} />
+          )
+        }}
+      />
+
+      <Tab.Screen
+        name="Family"
+        component={FamilyStack}
+        options={{
+          title: 'Family Pet',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="pets" color={color} size={size} />
+          )
+        }}
+      />
+
+      <Tab.Screen
+        name="Dicas"
+        component={DicasPet}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="lightbulb-outline" color={color} size={size} />
+          )
+        }}
+      />
+
+      <Tab.Screen
+        name="Perfil"
+        component={UserProfile}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="user" color={color} size={size} />
+          )
+        }}
+      />
+    </Tab.Navigator>
+  );
 }

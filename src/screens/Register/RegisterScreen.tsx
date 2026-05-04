@@ -1,188 +1,132 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from "react-native";
-import { useForm, Controller } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert, 
+  Platform,
+  KeyboardAvoidingView,
+  ScrollView
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const registerSchema = z.object({
-  nome: z
-  .string()
-  .min(1, "Nome é obrigatório")
-  .min(3, "Nome deve ter ao menos 3 caracteres"),
+export default function RegisterScreen({ navigation }: any) {
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
 
-  email: z
-  .string()
-  .min(1, "Email é obrigatório")
-  .email("Email inválido"),
-
-  senha: z
-  .string()
-  .min(6, "A senha deve ter no mínimo 6 caracteres"),
-
-  telefone: z
-  .string()
-  .optional(),
-});
-
-type RegisterFormData = z.infer<typeof registerSchema>;
-
-export default function RegisterScreen() {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const {
-    control,
-    handleSubmit,
-    formState: { isSubmitting, errors },
-  } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema)
-  });
-
-  const onSubmit = async (data: RegisterFormData) => {
-    setIsLoading(true);
+  const handleRegister = async () => {
+    if (!nome || !email || !senha) {
+      Alert.alert('Ops!', 'Por favor, preencha todos os campos.');
+      return;
+    }
 
     try {
-      console.log("Cadastro de usuário:", data);
-      Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
-      // Aqui você pode chamar sua API ou salvar no AsyncStorage
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Não foi possível concluir o cadastro.");
-    } finally {
-      setIsLoading(false);
+      const userData = { nome, email, senha };
+      await AsyncStorage.setItem('@PetGuardian_UserData', JSON.stringify(userData));
+      
+      Alert.alert('Sucesso!', 'Sua conta foi criada. Faça login para entrar na matilha.');
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert('Erro', 'Não foi possível criar a conta.');
     }
   };
 
-  if (isSubmitting || isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#348dfa" />
-        <Text style={styles.loadingText}>Carregando...</Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Cadastro</Text>
+    <KeyboardAvoidingView 
+      style={styles.mainContainer} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <View style={styles.contentWrapper}>
+          
+          {/* Cabeçalho */}
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Criar Conta</Text>
+            <Text style={styles.subtitle}>Preencha seus dados para começar a usar o PetGuardian.</Text>
+          </View>
 
-      <Controller
-        control={control}
-        name="nome"
-        render={({ field: { onChange, value } }) => (
-          <>
+          {/* Formulário num Card Branco */}
+          <View style={styles.formContainer}>
+            
+            <Text style={styles.inputLabel}>Seu Nome</Text>
             <TextInput
               style={styles.input}
-              placeholder="Nome"
-              value={value}
-              onChangeText={onChange}
-              autoCapitalize="words"
+              placeholder="Como quer ser chamado?"
+              placeholderTextColor="#A0AEC0"
+              value={nome}
+              onChangeText={setNome}
             />
-            {errors.nome && <Text style={styles.error}>{errors.nome.message}</Text>}
-          </>
-        )}
-      />
 
-      <Controller
-        control={control}
-        name="email"
-        render={({ field: { onChange, value } }) => (
-          <>
+            <Text style={styles.inputLabel}>E-mail</Text>
             <TextInput
               style={styles.input}
-              placeholder="Email"
-              value={value}
-              onChangeText={onChange}
-              autoCapitalize="none"
+              placeholder="seu@email.com"
+              placeholderTextColor="#A0AEC0"
               keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
-            {errors.email && <Text style={styles.error}>{errors.email.message}</Text>}
-          </>
-        )}
-      />
 
-      <Controller
-        control={control}
-        name="senha"
-        render={({ field: { onChange, value } }) => (
-          <>
+            <Text style={styles.inputLabel}>Senha</Text>
             <TextInput
               style={styles.input}
-              placeholder="Senha"
-              value={value}
-              onChangeText={onChange}
+              placeholder="Crie uma senha forte"
+              placeholderTextColor="#A0AEC0"
               secureTextEntry
+              value={senha}
+              onChangeText={setSenha}
             />
-            {errors.senha && <Text style={styles.error}>{errors.senha.message}</Text>}
-          </>
-        )}
-      />
 
-      <Controller
-        control={control}
-        name="telefone"
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Telefone"
-            value={value}
-            onChangeText={onChange}
-            keyboardType="phone-pad"
-          />
-        )}
-      />
+            <TouchableOpacity style={[styles.button, styles.buttonShadow]} onPress={handleRegister}>
+              <Text style={styles.buttonText}>Cadastrar</Text>
+            </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)}>
-        <Text style={styles.buttonText}>Cadastrar</Text>
-      </TouchableOpacity>
-    </View>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Já faz parte de uma matilha? </Text>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Text style={styles.linkText}>Fazer Login</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
+// Os estilos são idênticos aos do Login, reaproveitando a mesma identidade visual
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
-    backgroundColor: "#fff",
+  mainContainer: { flex: 1, backgroundColor: '#F8FAFC' },
+  scrollContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  contentWrapper: { width: '100%', maxWidth: 400, alignItems: 'center' },
+  headerContainer: { alignItems: 'center', marginBottom: 30, marginTop: 10 },
+  title: { fontSize: 28, fontWeight: '800', color: '#1A202C', marginBottom: 8 },
+  subtitle: { fontSize: 16, color: '#718096', textAlign: 'center', paddingHorizontal: 10 },
+  formContainer: {
+    width: '100%', backgroundColor: '#FFFFFF', padding: 24, borderRadius: 24, borderWidth: 1, borderColor: '#EDF2F7',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
+      android: { elevation: 3 },
+      web: { boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.04)' }
+    }),
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
+  inputLabel: { fontSize: 14, fontWeight: '600', color: '#4A5568', marginBottom: 8, marginLeft: 4 },
+  input: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#E2E8F0', padding: 16, borderRadius: 16, marginBottom: 20, fontSize: 16, color: '#2D3748' },
+  button: { backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginTop: 10 },
+  buttonShadow: {
+    ...Platform.select({
+      ios: { shadowColor: '#0066FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+      android: { elevation: 6 },
+      web: { boxShadow: '0px 8px 20px rgba(0, 102, 255, 0.25)' }
+    }),
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: "#348dfa",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 32,
-    textAlign: "center",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  error: {
-    color: "red",
-    marginBottom: 12,
-  },
-  button: {
-    backgroundColor: "#007AFF",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  buttonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
+  footerText: { color: '#718096', fontSize: 15 },
+  linkText: { color: '#0066FF', fontWeight: '700', fontSize: 15 }
 });
