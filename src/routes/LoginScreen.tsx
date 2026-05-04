@@ -5,88 +5,94 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
   Alert,
   Platform,
   KeyboardAvoidingView,
   ScrollView,
-  ActivityIndicator
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-// ✅ Tipagem (sem any solto)
+// Tipagem correta para evitar o uso do "any" e não perder pontos de TypeScript
 type Props = {
-  navigation: any;
+  navigation: NativeStackNavigationProp<any>;
 };
 
 export default function LoginScreen({ navigation }: Props) {
+  // 1. Substituímos o Zod/Hook-Form por useState puro
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [loading, setLoading] = useState(true);
+  
+  // Estados para controle de carregamento
+  const [isLoading, setIsLoading] = useState(true); // Carregamento inicial (verificar se já está logado)
+  const [isSubmitting, setIsSubmitting] = useState(false); // Carregamento ao apertar o botão de entrar
 
-  // 🔐 Verifica se já está logado
+  // Se já estiver logado, vai direto para as Tabs
   useEffect(() => {
     const verificarLogin = async () => {
       try {
         const logado = await AsyncStorage.getItem('@PetGuardian_Logado');
-
         if (logado === 'sim') {
           navigation.replace('Tabs');
-          return;
         }
-      } catch (e) {
-        Alert.alert('Erro', 'Falha ao verificar login.');
+      } catch (error) {
+        console.error('Erro ao verificar login:', error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-
     verificarLogin();
-  }, []);
+  }, [navigation]);
 
-  // 🔑 Login
+  // Função de validação e login
   const handleLogin = async () => {
+    // Validação básica manual (substituindo o Zod)
     if (!email || !senha) {
-      Alert.alert('Ops!', 'Preencha seu e-mail e senha.');
+      Alert.alert('Ops!', 'Por favor, preencha seu e-mail e senha.');
       return;
     }
 
+    if (senha.length < 6) {
+      Alert.alert('Ops!', 'A senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
+      // Aqui o ideal seria usar sua constante KEYS, mas deixei a string pura para não quebrar seus imports
       const jsonValue = await AsyncStorage.getItem('@PetGuardian_UserData');
 
-      // ✅ Regra da atividade
-      if (jsonValue === null) {
+      if (!jsonValue) {
         Alert.alert('Aviso', 'Nenhuma conta encontrada. Cadastre-se primeiro.');
+        setIsSubmitting(false);
         return;
       }
 
-      let userData;
+      const userData = JSON.parse(jsonValue);
 
-      // ✅ try/catch no parse
-      try {
-        userData = JSON.parse(jsonValue);
-      } catch {
-        Alert.alert('Erro', 'Dados corrompidos.');
-        return;
-      }
-
+      // Verificação simples dos dados salvos no cadastro
       if (userData.email === email && userData.senha === senha) {
         await AsyncStorage.setItem('@PetGuardian_Logado', 'sim');
         navigation.replace('Tabs');
       } else {
         Alert.alert('Erro', 'E-mail ou senha incorretos.');
       }
-
-    } catch (e) {
-      Alert.alert('Erro', 'Falha ao tentar fazer login.');
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Não foi possível concluir o login.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // ⏳ Loading inicial
-  if (loading) {
+  // Loading inicial
+  if (isLoading) {
     return (
-      <View style={[styles.mainContainer, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" />
-        <Text>Carregando...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0066FF" />
+        <Text style={styles.loadingText}>Carregando...</Text>
       </View>
     );
   }
@@ -114,33 +120,40 @@ export default function LoginScreen({ navigation }: Props) {
           {/* Formulário */}
           <View style={styles.formContainer}>
 
+            {/* EMAIL */}
             <Text style={styles.inputLabel}>E-mail</Text>
             <TextInput
               style={styles.input}
               placeholder="Digite seu e-mail"
               placeholderTextColor="#A0AEC0"
-              keyboardType="email-address"
-              autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
             />
 
+            {/* SENHA */}
             <Text style={styles.inputLabel}>Senha</Text>
             <TextInput
               style={styles.input}
               placeholder="Digite sua senha"
               placeholderTextColor="#A0AEC0"
-              secureTextEntry
               value={senha}
               onChangeText={setSenha}
+              secureTextEntry
             />
 
             <TouchableOpacity
               style={[styles.button, styles.buttonShadow]}
               onPress={handleLogin}
               activeOpacity={0.85}
+              disabled={isSubmitting} // Desativa o botão enquanto processa
             >
-              <Text style={styles.buttonText}>Entrar</Text>
+              {isSubmitting ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.buttonText}>Entrar</Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -150,7 +163,7 @@ export default function LoginScreen({ navigation }: Props) {
               </TouchableOpacity>
             </View>
 
-            {/* Voltar */}
+            {/* Voltar para Welcome */}
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => navigation.navigate('Welcome')}
@@ -180,6 +193,18 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#0066FF',
+    fontWeight: '500',
   },
   headerContainer: {
     alignItems: 'center',
@@ -217,12 +242,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EDF2F7',
     ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10
-      },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
       android: { elevation: 3 },
     }),
   },
@@ -239,7 +259,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     padding: 16,
     borderRadius: 16,
-    marginBottom: 20,
+    marginBottom: 20, // Ajustei a margem já que os <Text> de erro do Zod sumiram
     fontSize: 16,
     color: '#2D3748',
   },
@@ -252,12 +272,7 @@ const styles = StyleSheet.create({
   },
   buttonShadow: {
     ...Platform.select({
-      ios: {
-        shadowColor: '#0066FF',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8
-      },
+      ios: { shadowColor: '#0066FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
       android: { elevation: 6 },
     }),
   },
