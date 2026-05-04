@@ -1,7 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-// Correção: Alterado de 'Family' para 'FamilyPet' de acordo com a sua estrutura de pastas
 import FamilyPetScreen from '../screens/FamilyPet/FamilyPetScreen';
 import AddMemberScreen from '../screens/AddMember/AddMemberScreen';
 
