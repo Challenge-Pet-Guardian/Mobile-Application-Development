@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { STORAGE_CUIDADORES } from '../../constants/Keys';
 
 const maxWidth = 400;
 
-export default function AddMemberScreen({ navigation }: any) {
+type Props = {
+  navigation: NativeStackNavigationProp<any>;
+};
+
+export default function AddMemberScreen({ navigation }: Props) {
   const [nome, setNome] = useState('');
   const [funcao, setFuncao] = useState('');
 
@@ -20,12 +26,12 @@ export default function AddMemberScreen({ navigation }: any) {
       funcao
     };
 
-    const dados = await AsyncStorage.getItem('@Matilha_Cuidadores');
+    const dados = await AsyncStorage.getItem(STORAGE_CUIDADORES);
     const lista = dados ? JSON.parse(dados) : [];
 
     lista.push(novo);
 
-    await AsyncStorage.setItem('@Matilha_Cuidadores', JSON.stringify(lista));
+    await AsyncStorage.setItem(STORAGE_CUIDADORES, JSON.stringify(lista));
 
     navigation.goBack();
   };
@@ -49,12 +55,22 @@ export default function AddMemberScreen({ navigation }: any) {
           onChangeText={setFuncao}
         />
 
+        {/* REQUISITO 3: Exibição Dinâmica do Estado do Formulário */}
+        {(nome !== '' || funcao !== '') && (
+          <View style={styles.previewContainer}>
+            <Text style={styles.previewText}>
+              👀 Pré-visualização:{'\n'} 
+              <Text style={{fontWeight: 'bold'}}>{nome ? nome : '???'}</Text> será adicionado(a) como <Text style={{fontWeight: 'bold'}}>{funcao ? funcao : '???'}</Text> da matilha!
+            </Text>
+          </View>
+        )}
+
         <TouchableOpacity style={styles.btn} onPress={salvar}>
           <Text style={styles.btnText}>Salvar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={{ marginTop: 10 }}>Cancelar</Text>
+          <Text style={{ marginTop: 15, textAlign: 'center', color: '#666' }}>Cancelar</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -62,24 +78,35 @@ export default function AddMemberScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, alignItems: 'center', backgroundColor: '#f5f5f5' },
+  mainContainer: { flex: 1, alignItems: 'center', backgroundColor: '#f5f5f5', justifyContent: 'center' },
   contentContainer: { width: '100%', maxWidth, padding: 20 },
-
-  title: { fontSize: 22, marginBottom: 20 },
-
+  title: { fontSize: 22, marginBottom: 20, fontWeight: 'bold', textAlign: 'center' },
   input: {
     borderWidth: 1,
+    borderColor: '#ccc',
     marginBottom: 15,
-    padding: 10,
-    borderRadius: 10
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: '#fff'
   },
-
   btn: {
     backgroundColor: '#0066ff',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center'
   },
-
-  btnText: { color: '#fff', fontWeight: 'bold' }
+  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  previewContainer: {
+    backgroundColor: '#EBF4FF',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#0066ff'
+  },
+  previewText: {
+    color: '#0066ff',
+    fontSize: 14,
+    textAlign: 'center'
+  }
 });
