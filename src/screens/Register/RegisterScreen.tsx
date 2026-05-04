@@ -11,8 +11,14 @@ import {
   ScrollView
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { STORAGE_USER_DATA } from '../../constants/Keys';
 
-export default function RegisterScreen({ navigation }: any) {
+type Props = {
+  navigation: NativeStackNavigationProp<any>;
+};
+
+export default function RegisterScreen({ navigation }: Props) {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -25,7 +31,7 @@ export default function RegisterScreen({ navigation }: any) {
 
     try {
       const userData = { nome, email, senha };
-      await AsyncStorage.setItem('@PetGuardian_UserData', JSON.stringify(userData));
+      await AsyncStorage.setItem(STORAGE_USER_DATA, JSON.stringify(userData));
       
       Alert.alert('Sucesso!', 'Sua conta foi criada. Faça login para entrar na matilha.');
       navigation.goBack();
@@ -99,7 +105,6 @@ export default function RegisterScreen({ navigation }: any) {
   );
 }
 
-// Os estilos são idênticos aos do Login, reaproveitando a mesma identidade visual
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#F8FAFC' },
   scrollContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },

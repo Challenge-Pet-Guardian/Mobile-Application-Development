@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { STORAGE_PERFIL, STORAGE_LOGADO } from '../../constants/Keys';
 
-const STORAGE_KEY = '@PetGuardian:perfil';
+type Props = {
+  navigation: NativeStackNavigationProp<any>;
+};
 
-export default function UserProfileScreen({ navigation }: any) {
+export default function UserProfileScreen({ navigation }: Props) {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [idade, setIdade] = useState('');
@@ -16,13 +20,12 @@ export default function UserProfileScreen({ navigation }: any) {
 
   const carregarPerfil = async () => {
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
+      const raw = await AsyncStorage.getItem(STORAGE_PERFIL);
       if (raw !== null) {
         const dados = JSON.parse(raw);
         setNome(dados.nome || '');
         setEmail(dados.email || '');
         setIdade(dados.idade || '');
-        alert('Perfil carregado do dispositivo!');
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -34,7 +37,7 @@ export default function UserProfileScreen({ navigation }: any) {
   const salvarPerfil = async () => {
     try {
       const perfil = { nome, email, idade };
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(perfil));
+      await AsyncStorage.setItem(STORAGE_PERFIL, JSON.stringify(perfil));
       alert('Perfil salvo com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar dados:', error);
@@ -43,7 +46,7 @@ export default function UserProfileScreen({ navigation }: any) {
 
   const limparPerfil = async () => {
     try {
-      await AsyncStorage.removeItem(STORAGE_KEY);
+      await AsyncStorage.removeItem(STORAGE_PERFIL);
       setNome('');
       setEmail('');
       setIdade('');
@@ -53,10 +56,9 @@ export default function UserProfileScreen({ navigation }: any) {
     }
   };
 
-  // Logout: remove o flag de logado e volta para a Welcome
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('@PetGuardian_Logado');
+      await AsyncStorage.removeItem(STORAGE_LOGADO);
       navigation.replace('Welcome');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);

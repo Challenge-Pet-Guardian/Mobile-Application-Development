@@ -2,20 +2,24 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { STORAGE_CUIDADORES, STORAGE_RECADOS } from '../../constants/Keys';
 
-export default function FamilyPetScreen({ navigation }: any) {
+type Props = {
+  navigation: NativeStackNavigationProp<any>;
+};
+
+export default function FamilyPetScreen({ navigation }: Props) {
   const [cuidadores, setCuidadores] = useState([]);
   
-  // Novos estados para os Recados
   const [recados, setRecados] = useState<{id: string, texto: string, hora: string}[]>([]);
   const [novoRecado, setNovoRecado] = useState('');
 
-  // Carrega Cuidadores e Recados do armazenamento local
   const carregarDados = async () => {
-    const dadosCuidadores = await AsyncStorage.getItem('@Matilha_Cuidadores');
+    const dadosCuidadores = await AsyncStorage.getItem(STORAGE_CUIDADORES);
     if (dadosCuidadores) setCuidadores(JSON.parse(dadosCuidadores));
 
-    const dadosRecados = await AsyncStorage.getItem('@Matilha_Recados');
+    const dadosRecados = await AsyncStorage.getItem(STORAGE_RECADOS);
     if (dadosRecados) setRecados(JSON.parse(dadosRecados));
   };
 
@@ -25,7 +29,6 @@ export default function FamilyPetScreen({ navigation }: any) {
     }, [])
   );
 
-  // Lógica para adicionar um recado na lista
   const adicionarRecado = async () => {
     if (novoRecado.trim() === '') return;
 
@@ -37,18 +40,17 @@ export default function FamilyPetScreen({ navigation }: any) {
       hora: horaAtual
     };
 
-    const novaLista = [recadoCriado, ...recados]; // Adiciona no topo da lista
+    const novaLista = [recadoCriado, ...recados]; 
     setRecados(novaLista);
-    setNovoRecado(''); // Limpa o campo de texto
+    setNovoRecado(''); 
 
-    await AsyncStorage.setItem('@Matilha_Recados', JSON.stringify(novaLista));
+    await AsyncStorage.setItem(STORAGE_RECADOS, JSON.stringify(novaLista));
   };
 
-  // Lógica para remover um recado (Para testes no protótipo)
   const removerRecado = async (id: string) => {
     const novaLista = recados.filter(r => r.id !== id);
     setRecados(novaLista);
-    await AsyncStorage.setItem('@Matilha_Recados', JSON.stringify(novaLista));
+    await AsyncStorage.setItem(STORAGE_RECADOS, JSON.stringify(novaLista));
   };
 
   const getInitials = (name: string) => {
@@ -96,11 +98,10 @@ export default function FamilyPetScreen({ navigation }: any) {
           <Text style={styles.addButtonText}>+ Adicionar Novo Familiar</Text>
         </TouchableOpacity>
 
-        {/* Nova Secção de Recados Interativa */}
+        {/* Secção de Recados Interativa */}
         <View style={[styles.recadosCard, styles.whiteShadow]}>
           <Text style={styles.recadosTitle}>Mural da Matilha:</Text>
           
-          {/* Campo de Digitação */}
           <TextInput
             style={styles.recadosInput}
             placeholder="Ex: Dei o remédio de carrapato!"
@@ -113,7 +114,6 @@ export default function FamilyPetScreen({ navigation }: any) {
             <Text style={styles.recadosButtonText}>Adicionar Recado</Text>
           </TouchableOpacity>
 
-          {/* Lista de Recados */}
           <View style={styles.recadosList}>
             {recados.length === 0 ? (
               <Text style={styles.recadosVazio}>Nenhum recado ainda hoje.</Text>
@@ -131,7 +131,6 @@ export default function FamilyPetScreen({ navigation }: any) {
               ))
             )}
           </View>
-
         </View>
 
       </ScrollView>
@@ -175,7 +174,6 @@ const styles = StyleSheet.create({
   addButton: { backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 15, alignItems: 'center', marginTop: 10, marginBottom: 35 },
   addButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 
-  // Estilos atualizados dos Recados
   recadosCard: { padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#F0F0F0' },
   recadosTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 15 },
   
