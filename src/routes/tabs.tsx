@@ -17,6 +17,11 @@ export default function Tabs() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: '#000',
+          bottom: 20,
+          marginHorizontal: 20,
+          borderRadius: 17,
+          borderTopWidth: 0,
+          elevation: 5,
           height: 60
         },
         tabBarActiveTintColor: '#0066ff',

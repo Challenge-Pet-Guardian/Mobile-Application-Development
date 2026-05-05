@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { STORAGE_CUIDADORES, STORAGE_RECADOS } from '../../constants/Keys';
+import { Header } from '../../components/Header';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -73,8 +74,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
     <View style={styles.mainContainer}>
       <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         
-        <Text style={styles.headerTitle}>PetGuardian</Text>
-        <Text style={styles.dateText}>{dataFormatada}</Text>
+        <Header title='Family Pet'/>
 
         <Text style={styles.sectionTitle}>Canto da Matilha: Tutores de Carlos</Text>
         <Text style={styles.subSectionTitle}>Lista de Cuidadores</Text>
