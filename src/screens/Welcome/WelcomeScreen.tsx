@@ -1,66 +1,55 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Animated,
   Dimensions,
   StatusBar,
 } from 'react-native';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { STORAGE_LOGADO } from '../../constants/Keys';
 
 const { width, height } = Dimensions.get('window');
 
-export default function WelcomeScreen({ navigation }: any) {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(40)).current;
-  const scaleAnim = useRef(new Animated.Value(0.85)).current;
-  const buttonFade = useRef(new Animated.Value(0)).current;
-  const buttonSlide = useRef(new Animated.Value(30)).current;
+type Props = {
+  navigation: NativeStackNavigationProp<any>;
+};
 
+export default function WelcomeScreen({ navigation }: Props) {
+  
   useEffect(() => {
     const verificarLogin = async () => {
-      const logado = await AsyncStorage.getItem('@PetGuardian_Logado');
-      if (logado === 'sim') {
-        navigation.replace('Tabs');
-        return;
+      try {
+        const logado = await AsyncStorage.getItem(STORAGE_LOGADO);
+        if (logado === 'sim') {
+          navigation.replace('Tabs');
+        }
+      } catch (error) {
+        console.error("Erro ao verificar login:", error);
       }
     };
     verificarLogin();
-
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
-        Animated.timing(scaleAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
-      ]),
-      Animated.parallel([
-        Animated.timing(buttonFade, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(buttonSlide, { toValue: 0, duration: 500, useNativeDriver: true }),
-      ]),
-    ]).start();
-  }, []);
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0A1628" />
 
+      {/* Elementos Visuais de Fundo */}
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
       <View style={styles.bgCircle3} />
 
       <View style={styles.content}>
-
+        
+        {/* REQUISITO: Animação com Reanimated (ZoomIn) */}
         <Animated.View
-          style={[
-            styles.heroSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-            },
-          ]}
+          entering={ZoomIn.duration(800)}
+          style={styles.heroSection}
         >
           <View style={styles.iconWrapper}>
             <View style={styles.iconRingOuter} />
@@ -96,11 +85,10 @@ export default function WelcomeScreen({ navigation }: any) {
           </View>
         </Animated.View>
 
+        {/* REQUISITO: Animação com Reanimated (FadeInDown com delay) */}
         <Animated.View
-          style={[
-            styles.actionsBlock,
-            { opacity: buttonFade, transform: [{ translateY: buttonSlide }] },
-          ]}
+          entering={FadeInDown.delay(400).duration(600)}
+          style={styles.actionsBlock}
         >
           <TouchableOpacity
             style={[styles.btnPrimary, styles.btnShadow]}
@@ -126,7 +114,7 @@ export default function WelcomeScreen({ navigation }: any) {
           </TouchableOpacity>
 
           <Text style={styles.termsText}>
-            Ao continuar, você concorda com nossos{' '}
+            Ao continuar, você concorda com os nossos{' '}
             <Text style={styles.termsLink}>Termos de Uso</Text>
           </Text>
         </Animated.View>
