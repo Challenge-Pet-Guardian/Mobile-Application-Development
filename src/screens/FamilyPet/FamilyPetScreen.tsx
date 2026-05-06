@@ -1,27 +1,66 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput, Modal, KeyboardAvoidingView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { STORAGE_CUIDADORES, STORAGE_RECADOS } from '../../constants/Keys';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+
+import { STORAGE_CUIDADORES, STORAGE_RECADOS, STORAGE_USER_DATA } from '../../constants/Keys';
 import { Header } from '../../components/Header';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
 };
 
+type Recado = {
+  id: string;
+  texto: string;
+  hora: string;
+  autor: string; 
+};
+
+// 1. ADICIONADO O TIPO CUIDADOR AQUI
+type Cuidador = {
+  id: string;
+  nome: string;
+  funcao: string;
+};
+
 export default function FamilyPetScreen({ navigation }: Props) {
-  const [cuidadores, setCuidadores] = useState([]);
-  
-  const [recados, setRecados] = useState<{id: string, texto: string, hora: string}[]>([]);
+  // 2. CORRIGIDO O USESTATE PARA RECEBER A LISTA DE CUIDADORES
+  const [cuidadores, setCuidadores] = useState<Cuidador[]>([]);
+  const [recados, setRecados] = useState<Recado[]>([]);
   const [novoRecado, setNovoRecado] = useState('');
+  
+  const [usuarioLogado, setUsuarioLogado] = useState('Tutor');
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+
+  const [modalVisivel, setModalVisivel] = useState(false);
+  const [nomeFamiliar, setNomeFamiliar] = useState('');
+  const [funcaoFamiliar, setFuncaoFamiliar] = useState('');
 
   const carregarDados = async () => {
-    const dadosCuidadores = await AsyncStorage.getItem(STORAGE_CUIDADORES);
-    if (dadosCuidadores) setCuidadores(JSON.parse(dadosCuidadores));
+    try {
+      const dadosCuidadores = await AsyncStorage.getItem(STORAGE_CUIDADORES);
+      if (dadosCuidadores) {
+        setCuidadores(JSON.parse(dadosCuidadores));
+      }
 
-    const dadosRecados = await AsyncStorage.getItem(STORAGE_RECADOS);
-    if (dadosRecados) setRecados(JSON.parse(dadosRecados));
+      const dadosRecados = await AsyncStorage.getItem(STORAGE_RECADOS);
+      if (dadosRecados) {
+        setRecados(JSON.parse(dadosRecados));
+      }
+
+      const dadosConta = await AsyncStorage.getItem(STORAGE_USER_DATA);
+      if (dadosConta) {
+        const conta = JSON.parse(dadosConta);
+        if (conta.nome) {
+          setUsuarioLogado(conta.nome);
+        }
+      }
+    } catch (error) {
+      console.log("Deu erro ao carregar AsyncStorage:", error);
+    }
   };
 
   useFocusEffect(
@@ -30,22 +69,59 @@ export default function FamilyPetScreen({ navigation }: Props) {
     }, [])
   );
 
-  const adicionarRecado = async () => {
-    if (novoRecado.trim() === '') return;
+  const salvarCuidador = async () => {
+    if (nomeFamiliar.trim() === '' || funcaoFamiliar.trim() === '') return;
 
-    const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    
-    const recadoCriado = {
+    const novo: Cuidador = {
       id: Date.now().toString(),
-      texto: novoRecado,
-      hora: horaAtual
+      nome: nomeFamiliar,
+      funcao: funcaoFamiliar
     };
 
-    const novaLista = [recadoCriado, ...recados]; 
+    const novaLista = [...cuidadores, novo];
+    setCuidadores(novaLista);
+    await AsyncStorage.setItem(STORAGE_CUIDADORES, JSON.stringify(novaLista));
+
+    setNomeFamiliar('');
+    setFuncaoFamiliar('');
+    setModalVisivel(false);
+  };
+
+  const removerCuidador = async (id: string) => {
+    const novaLista = cuidadores.filter((c) => c.id !== id);
+    setCuidadores(novaLista);
+    await AsyncStorage.setItem(STORAGE_CUIDADORES, JSON.stringify(novaLista));
+  };
+
+  const salvarRecado = async () => {
+    if (novoRecado === '') return; 
+
+    const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    let novaLista = [...recados];
+
+    if (editandoId !== null) {
+      novaLista = novaLista.map(r => 
+        r.id === editandoId ? { ...r, texto: novoRecado, hora: horaAtual + " (editado)" } : r
+      );
+      setEditandoId(null); 
+    } else {
+      const recadoCriado: Recado = {
+        id: Date.now().toString(),
+        texto: novoRecado,
+        hora: horaAtual,
+        autor: usuarioLogado
+      };
+      novaLista = [recadoCriado, ...recados]; 
+    }
+
     setRecados(novaLista);
     setNovoRecado(''); 
-
     await AsyncStorage.setItem(STORAGE_RECADOS, JSON.stringify(novaLista));
+  };
+
+  const prepararEdicao = (recado: Recado) => {
+    setNovoRecado(recado.texto);
+    setEditandoId(recado.id);
   };
 
   const removerRecado = async (id: string) => {
@@ -56,19 +132,8 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
   const getInitials = (name: string) => {
     if (!name) return '??';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
   };
-
-  const dataFormatada = new Date().toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
 
   return (
     <View style={styles.mainContainer}>
@@ -79,40 +144,59 @@ export default function FamilyPetScreen({ navigation }: Props) {
         <Text style={styles.sectionTitle}>Canto da Matilha: Tutores de Carlos</Text>
         <Text style={styles.subSectionTitle}>Lista de Cuidadores</Text>
 
-        {cuidadores.map((c: any) => (
-          <View key={c.id} style={[styles.card, styles.whiteShadow]}>
+        {cuidadores.map((c, index) => (
+          <Animated.View 
+            key={c.id} 
+            entering={FadeInDown.delay(index * 100)}
+            style={[styles.card, styles.whiteShadow]}
+          >
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{getInitials(c.nome)}</Text>
             </View>
             <View style={styles.cardTextContainer}>
               <Text style={styles.cardName}>{c.nome}</Text>
-              <Text style={styles.cardRole}>Função: {c.funcao}</Text>
+              <Text style={styles.cardRole}>{c.funcao}</Text>
             </View>
-          </View>
+            
+            <TouchableOpacity onPress={() => removerCuidador(c.id)} style={styles.btnAcao}>
+              <Text style={{ fontSize: 18 }}>🚪</Text>
+            </TouchableOpacity>
+          </Animated.View>
         ))}
 
         <TouchableOpacity
           style={[styles.addButton, styles.buttonShadow]}
-          onPress={() => navigation.navigate('AddMember')}
+          onPress={() => setModalVisivel(true)}
         >
           <Text style={styles.addButtonText}>+ Adicionar Novo Familiar</Text>
         </TouchableOpacity>
 
-        {/* Secção de Recados Interativa */}
         <View style={[styles.recadosCard, styles.whiteShadow]}>
           <Text style={styles.recadosTitle}>Mural da Matilha:</Text>
           
           <TextInput
             style={styles.recadosInput}
-            placeholder="Ex: Dei o remédio de carrapato!"
+            placeholder="Digite aqui o que aconteceu..."
             placeholderTextColor="#999"
             value={novoRecado}
             onChangeText={setNovoRecado}
+            multiline
           />
           
-          <TouchableOpacity style={styles.recadosButton} onPress={adicionarRecado}>
-            <Text style={styles.recadosButtonText}>Adicionar Recado</Text>
+          <TouchableOpacity 
+            style={styles.recadosButton} 
+            onPress={salvarRecado}
+          >
+            <Text style={styles.recadosButtonText}>
+              {editandoId ? 'Atualizar Recado' : 'Adicionar Recado'}
+            </Text>
           </TouchableOpacity>
+
+          {editandoId && (
+            <TouchableOpacity onPress={() => { setEditandoId(null); setNovoRecado(''); }}>
+              <Text style={styles.cancelarEdicaoText}>Cancelar Edição</Text>
+            </TouchableOpacity>
+          )}
 
           <View style={styles.recadosList}>
             {recados.length === 0 ? (
@@ -121,12 +205,19 @@ export default function FamilyPetScreen({ navigation }: Props) {
               recados.map((recado) => (
                 <View key={recado.id} style={styles.recadoItem}>
                   <View style={styles.recadoTextoContainer}>
-                    <Text style={styles.recadoTexto}>• {recado.texto}</Text>
+                    <Text style={styles.recadoAutor}>{recado.autor}</Text>
+                    <Text style={styles.recadoTexto}>{recado.texto}</Text>
                     <Text style={styles.recadoHora}>{recado.hora}</Text>
                   </View>
-                  <TouchableOpacity onPress={() => removerRecado(recado.id)}>
-                    <Text style={styles.recadoExcluir}>🗑️</Text>
-                  </TouchableOpacity>
+                  
+                  <View style={styles.acoesRecado}>
+                    <TouchableOpacity onPress={() => prepararEdicao(recado)} style={styles.btnAcao}>
+                      <Text style={styles.iconeAcao}>✏️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => removerRecado(recado.id)} style={styles.btnAcao}>
+                      <Text style={styles.iconeAcao}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ))
             )}
@@ -134,6 +225,45 @@ export default function FamilyPetScreen({ navigation }: Props) {
         </View>
 
       </ScrollView>
+
+      {/* POP-UP (MODAL) DE ADICIONAR FAMILIAR */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisivel}
+        onRequestClose={() => setModalVisivel(false)}
+      >
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Novo Familiar</Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Nome (ex: Enzo)"
+              placeholderTextColor="#999"
+              value={nomeFamiliar}
+              onChangeText={setNomeFamiliar}
+            />
+            
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Função (ex: Passeador)"
+              placeholderTextColor="#999"
+              value={funcaoFamiliar}
+              onChangeText={setFuncaoFamiliar}
+            />
+
+            <TouchableOpacity style={styles.modalBtnSalvar} onPress={salvarCuidador}>
+              <Text style={styles.modalBtnSalvarText}>Salvar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => { setModalVisivel(false); setNomeFamiliar(''); setFuncaoFamiliar(''); }}>
+              <Text style={styles.modalBtnCancelarText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
     </View>
   );
 }
@@ -147,7 +277,6 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6 },
       android: { elevation: 4 },
-      web: { boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.08)' }
     }),
   },
 
@@ -155,12 +284,9 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: { shadowColor: '#0066FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
       android: { elevation: 6 },
-      web: { boxShadow: '0px 6px 15px rgba(0, 102, 255, 0.25)' }
     }),
   },
 
-  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#1A1A1A' },
-  dateText: { fontSize: 14, color: '#666', marginBottom: 25 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
   subSectionTitle: { fontSize: 14, color: '#666', marginBottom: 20 },
 
@@ -177,32 +303,32 @@ const styles = StyleSheet.create({
   recadosCard: { padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#F0F0F0' },
   recadosTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 15 },
   
-  recadosInput: {
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    fontSize: 14,
-    backgroundColor: '#FAFAFA'
-  },
+  recadosInput: { borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 12, marginBottom: 12, fontSize: 14, backgroundColor: '#FAFAFA', minHeight: 60, textAlignVertical: 'top' },
   
-  recadosButton: { backgroundColor: '#0066FF', paddingVertical: 12, borderRadius: 30, alignItems: 'center', marginBottom: 20 },
+  recadosButton: { backgroundColor: '#0066FF', paddingVertical: 12, borderRadius: 12, alignItems: 'center', marginBottom: 10 },
   recadosButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
   
-  recadosList: { marginTop: 5 },
+  cancelarEdicaoText: { textAlign: 'center', color: '#666', marginBottom: 15, fontSize: 13, textDecorationLine: 'underline' },
+
+  recadosList: { marginTop: 10 },
   recadosVazio: { fontSize: 14, color: '#999', fontStyle: 'italic', textAlign: 'center' },
   
-  recadoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5'
-  },
-  recadoTextoContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 10 },
-  recadoTexto: { fontSize: 14, color: '#333', flex: 1 },
-  recadoHora: { fontSize: 12, color: '#999', marginLeft: 10 },
-  recadoExcluir: { fontSize: 16 }
+  recadoItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' },
+  recadoTextoContainer: { flex: 1, paddingRight: 10 },
+  recadoAutor: { fontSize: 12, fontWeight: '700', color: '#0066FF', marginBottom: 2 },
+  recadoTexto: { fontSize: 14, color: '#333', lineHeight: 20 },
+  recadoHora: { fontSize: 11, color: '#999', marginTop: 4 },
+  
+  acoesRecado: { flexDirection: 'row', gap: 10, paddingTop: 4 },
+  btnAcao: { padding: 8 },
+  iconeAcao: { fontSize: 16 },
+
+  // --- ESTILOS DO MODAL ---
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 },
+  modalInput: { borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' },
+  modalBtnSalvar: { backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 },
+  modalBtnSalvarText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  modalBtnCancelarText: { color: '#666', fontSize: 14, textAlign: 'center', textDecorationLine: 'underline' }
 });
