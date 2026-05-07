@@ -200,8 +200,8 @@ export default function FamilyPetScreen({ navigation }: Props) {
       <View style={styles.mainContainer}>
         <Header title='Family Pet' />
         <View style={styles.choiceContainer}>
-          <Text style={styles.sectionTitle}>Você ainda não faz parte de uma matilha!</Text>
-          <Text style={styles.subSectionTitle}>Escolha uma opção para começar a cuidar do seu pet em grupo.</Text>
+          <Text style={styles.sectionTitleCenter}>Você ainda não faz parte de uma matilha!</Text>
+          <Text style={styles.subSectionTitleCenter}>Escolha uma opção para começar a cuidar do seu pet em grupo.</Text>
 
           <TouchableOpacity style={styles.addButton} onPress={() => setFluxoAberto('criando')}>
             <Text style={styles.addButtonText}>Criar Nova Matilha</Text>
@@ -409,8 +409,15 @@ const styles = StyleSheet.create({
       android: { elevation: 6 },
     }),
   },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4, textAlign: 'center' },
-  subSectionTitle: { fontSize: 14, color: '#666', marginBottom: 20, textAlign: 'center' },
+  
+  // Estilos da versão do colega (sem centralizar)
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
+  subSectionTitle: { fontSize: 14, color: '#666', marginBottom: 20 },
+  
+  // Estilos para o estado de matilha vazia
+  sectionTitleCenter: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4, textAlign: 'center' },
+  subSectionTitleCenter: { fontSize: 14, color: '#666', marginBottom: 20, textAlign: 'center' },
+
   card: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, marginBottom: 16, borderWidth: 1, borderColor: '#F0F0F0' },
   avatar: { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: '#333', alignItems: 'center', justifyContent: 'center', marginRight: 15 },
   avatarText: { fontWeight: 'bold', fontSize: 15, color: '#333' },
