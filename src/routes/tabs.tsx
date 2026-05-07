@@ -44,7 +44,7 @@ export default function Tabs() {
         options={{
           title: 'Family Pet',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="pets" color={color} size={size} />
+            <FontAwesome name="users" color={color} size={size} />
           )
         }}
       />
