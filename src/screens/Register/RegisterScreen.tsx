@@ -23,9 +23,66 @@ export default function RegisterScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
+  // Estados para as mensagens de erro visuais
+  const [nomeErro, setNomeErro] = useState('');
+  const [emailErro, setEmailErro] = useState('');
+  const [senhaErro, setSenhaErro] = useState('');
+
+  // Validação do Nome
+  const validarNome = (text: string) => {
+    setNome(text);
+    if (text.trim() === '') {
+      setNomeErro('O nome é obrigatório!');
+    } else {
+      setNomeErro('');
+    }
+  };
+
+  // Validação de E-mail usando Regex
+  const validarEmail = (text: string) => {
+    setEmail(text);
+    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
+    if (text.trim() === '') {
+      setEmailErro('O e-mail é obrigatório!');
+    } else if (reg.test(text) === false) {
+      setEmailErro('O e-mail está com formato errado!');
+    } else {
+      setEmailErro('');
+    }
+  };
+
+  // Validação da Senha
+  const validarSenha = (text: string) => {
+    setSenha(text);
+    if (text.trim() === '') {
+      setSenhaErro('A senha é obrigatória!');
+    } else if (text.length < 8) {
+      setSenhaErro('A senha deve ter no mínimo 8 dígitos!');
+    } else {
+      setSenhaErro('');
+    }
+  };
+
   const handleRegister = async () => {
-    if (!nome || !email || !senha) {
-      Alert.alert('Ops!', 'Por favor, preencha todos os campos.');
+    let erroEncontrado = false;
+
+    // Força a validação visual caso o utilizador clique no botão sem preencher nada
+    if (nome.trim() === '') {
+      setNomeErro('O nome é obrigatório!');
+      erroEncontrado = true;
+    }
+    if (email.trim() === '') {
+      setEmailErro('O e-mail é obrigatório!');
+      erroEncontrado = true;
+    }
+    if (senha.trim() === '') {
+      setSenhaErro('A senha é obrigatória!');
+      erroEncontrado = true;
+    }
+
+    // Trava de segurança principal
+    if (erroEncontrado || nomeErro !== '' || emailErro !== '' || senhaErro !== '') {
+      Alert.alert('Aviso', 'Por favor, preencha os campos em destaque corretamente.');
       return;
     }
 
@@ -33,7 +90,7 @@ export default function RegisterScreen({ navigation }: Props) {
       const userData = { nome, email, senha };
       await AsyncStorage.setItem(STORAGE_USER_DATA, JSON.stringify(userData));
       
-      Alert.alert('Sucesso!', 'Sua conta foi criada. Faça login para entrar na matilha.');
+      Alert.alert('Sucesso!', 'A sua conta foi criada. Faça login para entrar na matilha.');
       navigation.goBack();
     } catch (e) {
       Alert.alert('Erro', 'Não foi possível criar a conta.');
@@ -59,33 +116,36 @@ export default function RegisterScreen({ navigation }: Props) {
             
             <Text style={styles.inputLabel}>Seu Nome</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, nomeErro !== '' ? styles.inputErro : null]}
               placeholder="Como quer ser chamado?"
               placeholderTextColor="#A0AEC0"
               value={nome}
-              onChangeText={setNome}
+              onChangeText={validarNome}
             />
+            {nomeErro !== '' && <Text style={styles.erroTexto}>{nomeErro}</Text>}
 
             <Text style={styles.inputLabel}>E-mail</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, emailErro !== '' ? styles.inputErro : null]}
               placeholder="seu@email.com"
               placeholderTextColor="#A0AEC0"
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={validarEmail}
             />
+            {emailErro !== '' && <Text style={styles.erroTexto}>{emailErro}</Text>}
 
             <Text style={styles.inputLabel}>Senha</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, senhaErro !== '' ? styles.inputErro : null]}
               placeholder="Crie uma senha forte"
               placeholderTextColor="#A0AEC0"
               secureTextEntry
               value={senha}
-              onChangeText={setSenha}
+              onChangeText={validarSenha}
             />
+            {senhaErro !== '' && <Text style={styles.erroTexto}>{senhaErro}</Text>}
 
             <TouchableOpacity style={[styles.button, styles.buttonShadow]} onPress={handleRegister}>
               <Text style={styles.buttonText}>Cadastrar</Text>
@@ -122,6 +182,11 @@ const styles = StyleSheet.create({
   },
   inputLabel: { fontSize: 14, fontWeight: '600', color: '#4A5568', marginBottom: 8, marginLeft: 4 },
   input: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#E2E8F0', padding: 16, borderRadius: 16, marginBottom: 20, fontSize: 16, color: '#2D3748' },
+  
+  // Estilos para os erros
+  inputErro: { borderColor: '#E53E3E', borderWidth: 1.5, backgroundColor: '#FFF5F5' },
+  erroTexto: { color: '#E53E3E', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 8, fontWeight: '500' },
+  
   button: { backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginTop: 10 },
   buttonShadow: {
     ...Platform.select({

@@ -1,159 +1,131 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert, 
   Platform,
   KeyboardAvoidingView,
-  ScrollView,
+  ScrollView
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { STORAGE_USER_DATA, STORAGE_LOGADO } from '../../constants/Keys';
+import { STORAGE_USER_DATA } from '../../constants/Keys';
 
-// Tipagem correta para evitar o uso do "any"
 type Props = {
   navigation: NativeStackNavigationProp<any>;
 };
 
 export default function LoginScreen({ navigation }: Props) {
-  // Estados nativos do React (Dentro do escopo da aula)
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  
-  // Estados para controle de carregamento
-  const [isLoading, setIsLoading] = useState(true); 
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Verifica se já está logado para pular o login
-  useEffect(() => {
-    const verificarLogin = async () => {
-      try {
-        const logado = await AsyncStorage.getItem(STORAGE_LOGADO);
-        if (logado === 'sim') {
-          navigation.replace('Tabs');
-        }
-      } catch (error) {
-        console.error('Erro ao verificar login:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    verificarLogin();
-  }, [navigation]);
+  // Estados para as mensagens de erro
+  const [emailErro, setEmailErro] = useState('');
+  const [senhaErro, setSenhaErro] = useState('');
 
-  // Função de validação manual
+  // Validação de E-mail
+  const validarEmail = (text: string) => {
+    setEmail(text);
+    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
+    if (reg.test(text) === false && text !== '') {
+      setEmailErro('O e-mail está com formato errado!');
+    } else {
+      setEmailErro('');
+    }
+  };
+
+  // Validação de Senha
+  const validarSenha = (text: string) => {
+    setSenha(text);
+    if (text.length > 0 && text.length < 8) {
+      setSenhaErro('A senha deve ter no mínimo 8 dígitos!');
+    } else {
+      setSenhaErro('');
+    }
+  };
+
   const handleLogin = async () => {
+    // 1. Verifica se os campos estão vazios
     if (!email || !senha) {
       Alert.alert('Ops!', 'Por favor, preencha seu e-mail e senha.');
       return;
     }
 
-    if (senha.length < 6) {
-      Alert.alert('Ops!', 'A senha deve ter no mínimo 6 caracteres.');
+    // 2. Trava de segurança: barra se houver erro de formatação
+    if (emailErro !== '' || senhaErro !== '') {
+      Alert.alert('Erro', 'Por favor, corrija os campos em destaque.');
       return;
     }
 
-    setIsSubmitting(true);
-
+    // 3. Tenta fazer o login buscando no AsyncStorage
     try {
-      // Puxa os dados salvos no cadastro usando a chave global
-      const jsonValue = await AsyncStorage.getItem(STORAGE_USER_DATA);
-
-      if (!jsonValue) {
-        Alert.alert('Aviso', 'Nenhuma conta encontrada. Cadastre-se primeiro.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      const userData = JSON.parse(jsonValue);
-
-      // Compara se o que foi digitado bate com o cofre
-      if (userData.email === email && userData.senha === senha) {
-        await AsyncStorage.setItem(STORAGE_LOGADO, 'sim');
-        navigation.replace('Tabs');
+      const userDataString = await AsyncStorage.getItem(STORAGE_USER_DATA);
+      
+      if (userDataString) {
+        const userData = JSON.parse(userDataString);
+        
+        // Compara se o que foi digitado bate com o que está salvo
+        if (userData.email === email && userData.senha === senha) {
+          // IMPORTANTE: Aqui você coloca o nome da rota principal do seu app
+          // Provavelmente é 'Tabs', 'Home' ou 'MainStack'
+          navigation.navigate('Tabs'); 
+        } else {
+          Alert.alert('Erro', 'E-mail ou senha incorretos.');
+        }
       } else {
-        Alert.alert('Erro', 'E-mail ou senha incorretos.');
+        Alert.alert('Ops!', 'Nenhuma conta encontrada. Crie uma conta primeiro!');
       }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Erro', 'Não foi possível concluir o login.');
-    } finally {
-      setIsSubmitting(false);
+    } catch (e) {
+      Alert.alert('Erro', 'Não foi possível acessar a conta.');
     }
   };
 
-  // Tela de loading inicial
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0066FF" />
-        <Text style={styles.loadingText}>Carregando...</Text>
-      </View>
-    );
-  }
-
   return (
-    <KeyboardAvoidingView
-      style={styles.mainContainer}
+    <KeyboardAvoidingView 
+      style={styles.mainContainer} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.contentWrapper}>
-
-          {/* Header */}
+          
+          {/* Cabeçalho */}
           <View style={styles.headerContainer}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoIcon}>🐾</Text>
-            </View>
-            <Text style={styles.brandName}>PetGuardian</Text>
+            <Text style={{ fontSize: 40, marginBottom: 10 }}>🐾</Text>
+            <Text style={styles.title}>PetGuardian</Text>
             <Text style={styles.subtitle}>Bem-vindo de volta!</Text>
           </View>
 
-          {/* Formulário */}
+          {/* Formulário num Card Branco */}
           <View style={styles.formContainer}>
-
-            {/* EMAIL */}
+            
             <Text style={styles.inputLabel}>E-mail</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Digite seu e-mail"
+              style={[styles.input, emailErro !== '' ? styles.inputErro : null]}
+              placeholder="seu@email.com"
               placeholderTextColor="#A0AEC0"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
               keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={validarEmail}
             />
+            {emailErro !== '' && <Text style={styles.erroTexto}>{emailErro}</Text>}
 
-            {/* SENHA */}
             <Text style={styles.inputLabel}>Senha</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Digite sua senha"
+              style={[styles.input, senhaErro !== '' ? styles.inputErro : null]}
+              placeholder="Sua senha secreta"
               placeholderTextColor="#A0AEC0"
-              value={senha}
-              onChangeText={setSenha}
               secureTextEntry
+              value={senha}
+              onChangeText={validarSenha}
             />
+            {senhaErro !== '' && <Text style={styles.erroTexto}>{senhaErro}</Text>}
 
-            <TouchableOpacity
-              style={[styles.button, styles.buttonShadow]}
-              onPress={handleLogin}
-              activeOpacity={0.85}
-              disabled={isSubmitting} 
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={styles.buttonText}>Entrar</Text>
-              )}
+            <TouchableOpacity style={[styles.button, styles.buttonShadow]} onPress={handleLogin}>
+              <Text style={styles.buttonText}>Entrar</Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -163,15 +135,12 @@ export default function LoginScreen({ navigation }: Props) {
               </TouchableOpacity>
             </View>
 
-            {/* Voltar para Welcome */}
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.navigate('Welcome')}
-            >
-              <Text style={styles.backText}>← Voltar</Text>
+            <TouchableOpacity style={{ marginTop: 20, alignItems: 'center' }} onPress={() => navigation.goBack()}>
+              <Text style={{ color: '#A0AEC0', fontSize: 14 }}>← Voltar</Text>
             </TouchableOpacity>
 
           </View>
+
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -179,129 +148,36 @@ export default function LoginScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  contentWrapper: {
-    width: '100%',
-    maxWidth: 400,
-    alignItems: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#0066FF',
-    fontWeight: '500',
-  },
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-    marginTop: 20,
-  },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#EBF4FF',
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  logoIcon: {
-    fontSize: 40,
-  },
-  brandName: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#1A202C',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#718096',
-    textAlign: 'center',
-  },
+  mainContainer: { flex: 1, backgroundColor: '#F8FAFC' },
+  scrollContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  contentWrapper: { width: '100%', maxWidth: 400, alignItems: 'center' },
+  headerContainer: { alignItems: 'center', marginBottom: 30, marginTop: 10 },
+  title: { fontSize: 32, fontWeight: '900', color: '#1A202C', marginBottom: 8 },
+  subtitle: { fontSize: 16, color: '#718096', textAlign: 'center' },
   formContainer: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    padding: 24,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#EDF2F7',
+    width: '100%', backgroundColor: '#FFFFFF', padding: 24, borderRadius: 24, borderWidth: 1, borderColor: '#EDF2F7',
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
       android: { elevation: 3 },
+      web: { boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.04)' }
     }),
   },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4A5568',
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  input: {
-    backgroundColor: '#F7FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 20, 
-    fontSize: 16,
-    color: '#2D3748',
-  },
-  button: {
-    backgroundColor: '#0066FF',
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginTop: 10,
-  },
+  inputLabel: { fontSize: 14, fontWeight: '600', color: '#4A5568', marginBottom: 8, marginLeft: 4 },
+  input: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#E2E8F0', padding: 16, borderRadius: 16, marginBottom: 20, fontSize: 16, color: '#2D3748' },
+  
+  inputErro: { borderColor: '#E53E3E', borderWidth: 1.5, backgroundColor: '#FFF5F5' },
+  erroTexto: { color: '#E53E3E', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 8, fontWeight: '500' },
+  
+  button: { backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginTop: 10 },
   buttonShadow: {
     ...Platform.select({
       ios: { shadowColor: '#0066FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
       android: { elevation: 6 },
+      web: { boxShadow: '0px 8px 20px rgba(0, 102, 255, 0.25)' }
     }),
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 24,
-  },
-  footerText: {
-    color: '#718096',
-    fontSize: 15,
-  },
-  linkText: {
-    color: '#0066FF',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  backButton: {
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  backText: {
-    color: '#A0AEC0',
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  buttonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
+  footerText: { color: '#718096', fontSize: 15 },
+  linkText: { color: '#0066FF', fontWeight: '700', fontSize: 15 }
 });
