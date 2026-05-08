@@ -28,64 +28,43 @@ export default function RegisterScreen({ navigation }: Props) {
   const [emailErro, setEmailErro] = useState('');
   const [senhaErro, setSenhaErro] = useState('');
 
-  // Validação do Nome
-  const validarNome = (text: string) => {
-    setNome(text);
-    if (text.trim() === '') {
-      setNomeErro('O nome é obrigatório!');
-    } else {
-      setNomeErro('');
-    }
-  };
-
-  // Validação de E-mail usando Regex
-  const validarEmail = (text: string) => {
-    setEmail(text);
-    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
-    if (text.trim() === '') {
-      setEmailErro('O e-mail é obrigatório!');
-    } else if (reg.test(text) === false) {
-      setEmailErro('O e-mail está com formato errado!');
-    } else {
-      setEmailErro('');
-    }
-  };
-
-  // Validação da Senha
-  const validarSenha = (text: string) => {
-    setSenha(text);
-    if (text.trim() === '') {
-      setSenhaErro('A senha é obrigatória!');
-    } else if (text.length < 8) {
-      setSenhaErro('A senha deve ter no mínimo 8 dígitos!');
-    } else {
-      setSenhaErro('');
-    }
-  };
-
   const handleRegister = async () => {
-    let erroEncontrado = false;
+    // 1. Limpa os erros antes de testar
+    setNomeErro('');
+    setEmailErro('');
+    setSenhaErro('');
 
-    // Força a validação visual caso o utilizador clique no botão sem preencher nada
+    let temErro = false;
+    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
+
+    // 2. Faz a validação de todos os campos
     if (nome.trim() === '') {
       setNomeErro('O nome é obrigatório!');
-      erroEncontrado = true;
-    }
-    if (email.trim() === '') {
-      setEmailErro('O e-mail é obrigatório!');
-      erroEncontrado = true;
-    }
-    if (senha.trim() === '') {
-      setSenhaErro('A senha é obrigatória!');
-      erroEncontrado = true;
+      temErro = true;
     }
 
-    // Trava de segurança principal
-    if (erroEncontrado || nomeErro !== '' || emailErro !== '' || senhaErro !== '') {
-      Alert.alert('Aviso', 'Por favor, preencha os campos em destaque corretamente.');
+    if (email.trim() === '') {
+      setEmailErro('O e-mail é obrigatório!');
+      temErro = true;
+    } else if (reg.test(email) === false) {
+      setEmailErro('O e-mail está com formato errado!');
+      temErro = true;
+    }
+
+    if (senha.trim() === '') {
+      setSenhaErro('A senha é obrigatória!');
+      temErro = true;
+    } else if (senha.length < 8) {
+      setSenhaErro('A senha deve ter no mínimo 8 dígitos!');
+      temErro = true;
+    }
+
+    // 3. Se algum campo falhou, para a função aqui
+    if (temErro) {
       return;
     }
 
+    // 4. Se passou em tudo, salva os dados!
     try {
       const userData = { nome, email, senha };
       await AsyncStorage.setItem(STORAGE_USER_DATA, JSON.stringify(userData));
@@ -120,7 +99,10 @@ export default function RegisterScreen({ navigation }: Props) {
               placeholder="Como quer ser chamado?"
               placeholderTextColor="#A0AEC0"
               value={nome}
-              onChangeText={validarNome}
+              onChangeText={(texto) => {
+                setNome(texto);
+                setNomeErro(''); // Limpa o erro ao digitar
+              }}
             />
             {nomeErro !== '' && <Text style={styles.erroTexto}>{nomeErro}</Text>}
 
@@ -132,7 +114,10 @@ export default function RegisterScreen({ navigation }: Props) {
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
-              onChangeText={validarEmail}
+              onChangeText={(texto) => {
+                setEmail(texto);
+                setEmailErro(''); // Limpa o erro ao digitar
+              }}
             />
             {emailErro !== '' && <Text style={styles.erroTexto}>{emailErro}</Text>}
 
@@ -143,7 +128,10 @@ export default function RegisterScreen({ navigation }: Props) {
               placeholderTextColor="#A0AEC0"
               secureTextEntry
               value={senha}
-              onChangeText={validarSenha}
+              onChangeText={(texto) => {
+                setSenha(texto);
+                setSenhaErro(''); // Limpa o erro ao digitar
+              }}
             />
             {senhaErro !== '' && <Text style={styles.erroTexto}>{senhaErro}</Text>}
 
@@ -183,7 +171,6 @@ const styles = StyleSheet.create({
   inputLabel: { fontSize: 14, fontWeight: '600', color: '#4A5568', marginBottom: 8, marginLeft: 4 },
   input: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#E2E8F0', padding: 16, borderRadius: 16, marginBottom: 20, fontSize: 16, color: '#2D3748' },
   
-  // Estilos para os erros
   inputErro: { borderColor: '#E53E3E', borderWidth: 1.5, backgroundColor: '#FFF5F5' },
   erroTexto: { color: '#E53E3E', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 8, fontWeight: '500' },
   

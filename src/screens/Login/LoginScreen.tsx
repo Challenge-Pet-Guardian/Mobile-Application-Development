@@ -26,41 +26,32 @@ export default function LoginScreen({ navigation }: Props) {
   const [emailErro, setEmailErro] = useState('');
   const [senhaErro, setSenhaErro] = useState('');
 
-  // Validação de E-mail
-  const validarEmail = (text: string) => {
-    setEmail(text);
-    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
-    if (reg.test(text) === false && text !== '') {
-      setEmailErro('O e-mail está com formato errado!');
-    } else {
-      setEmailErro('');
-    }
-  };
-
-  // Validação de Senha
-  const validarSenha = (text: string) => {
-    setSenha(text);
-    if (text.length > 0 && text.length < 8) {
-      setSenhaErro('A senha deve ter no mínimo 8 dígitos!');
-    } else {
-      setSenhaErro('');
-    }
-  };
-
   const handleLogin = async () => {
-    // 1. Verifica se os campos estão vazios
-    if (!email || !senha) {
-      Alert.alert('Ops!', 'Por favor, preencha seu e-mail e senha.');
+    setEmailErro('');
+    setSenhaErro('');
+
+    let temErro = false;
+    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
+
+    // 1. Validação visual no momento do clique
+    if (email.trim() === '') {
+      setEmailErro('Por favor, insira o seu e-mail.');
+      temErro = true;
+    } else if (reg.test(email) === false) {
+      setEmailErro('O e-mail está com formato errado!');
+      temErro = true;
+    }
+
+    if (senha.trim() === '') {
+      setSenhaErro('Por favor, insira a sua senha.');
+      temErro = true;
+    }
+
+    if (temErro) {
       return;
     }
 
-    // 2. Trava de segurança: barra se houver erro de formatação
-    if (emailErro !== '' || senhaErro !== '') {
-      Alert.alert('Erro', 'Por favor, corrija os campos em destaque.');
-      return;
-    }
-
-    // 3. Tenta fazer o login buscando no AsyncStorage
+    // 2. Tenta fazer o login buscando no AsyncStorage
     try {
       const userDataString = await AsyncStorage.getItem(STORAGE_USER_DATA);
       
@@ -69,8 +60,6 @@ export default function LoginScreen({ navigation }: Props) {
         
         // Compara se o que foi digitado bate com o que está salvo
         if (userData.email === email && userData.senha === senha) {
-          // IMPORTANTE: Aqui você coloca o nome da rota principal do seu app
-          // Provavelmente é 'Tabs', 'Home' ou 'MainStack'
           navigation.navigate('Tabs'); 
         } else {
           Alert.alert('Erro', 'E-mail ou senha incorretos.');
@@ -109,18 +98,24 @@ export default function LoginScreen({ navigation }: Props) {
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
-              onChangeText={validarEmail}
+              onChangeText={(texto) => {
+                setEmail(texto);
+                setEmailErro(''); // Limpa o erro ao digitar
+              }}
             />
             {emailErro !== '' && <Text style={styles.erroTexto}>{emailErro}</Text>}
 
             <Text style={styles.inputLabel}>Senha</Text>
             <TextInput
               style={[styles.input, senhaErro !== '' ? styles.inputErro : null]}
-              placeholder="Sua senha secreta"
+              placeholder="Sua senha"
               placeholderTextColor="#A0AEC0"
               secureTextEntry
               value={senha}
-              onChangeText={validarSenha}
+              onChangeText={(texto) => {
+                setSenha(texto);
+                setSenhaErro(''); // Limpa o erro ao digitar
+              }}
             />
             {senhaErro !== '' && <Text style={styles.erroTexto}>{senhaErro}</Text>}
 
