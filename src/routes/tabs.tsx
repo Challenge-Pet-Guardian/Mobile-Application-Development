@@ -1,12 +1,16 @@
 import React from 'react';
+import { View, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Home from '../screens/Home/HomeScreen';
+import FamilyStack from './FamilyStack';
+import PetProfile from '../screens/PetProfile/PetProfileScreen';
 import DicasPet from '../screens/DicasPet/DicasPetScreen';
 import UserProfile from '../screens/UserProfile/UserProfileScreen';
-import FamilyStack from './FamilyStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -22,7 +26,8 @@ export default function Tabs() {
           borderRadius: 17,
           borderTopWidth: 0,
           elevation: 5,
-          height: 60
+          height: 60,
+          position: 'absolute',
         },
         tabBarActiveTintColor: '#0066ff',
         tabBarInactiveTintColor: '#999'
@@ -50,6 +55,23 @@ export default function Tabs() {
       />
 
       <Tab.Screen
+        name="MeuPet"
+        component={PetProfile}
+        options={{
+          tabBarLabel: () => null,
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.centerButton}>
+              <MaterialCommunityIcons 
+                name="paw" 
+                size={35} 
+                color={focused ? '#0066ff' : '#000'} 
+              />
+            </View>
+          )
+        }}
+      />
+
+      <Tab.Screen
         name="Dicas"
         component={DicasPet}
         options={{
@@ -71,3 +93,21 @@ export default function Tabs() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  centerButton: {
+    width: 65,
+    height: 65,
+    backgroundColor: '#FFF',
+    borderRadius: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Platform.OS === 'android' ? 30 : 20, 
+    borderWidth: 5,
+    borderColor: '#000', 
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
+      android: { elevation: 6 },
+    }),
+  }
+});
