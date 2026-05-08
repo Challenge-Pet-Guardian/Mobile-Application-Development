@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput, Modal, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput, KeyboardAvoidingView, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons'; // <-- Importando os ícones profissionais!
 
 import { STORAGE_CUIDADORES, STORAGE_RECADOS, STORAGE_USER_DATA } from '../../constants/Keys';
 import { Header } from '../../components/Header';
@@ -96,6 +97,18 @@ export default function FamilyPetScreen({ navigation }: Props) {
     if (fluxoAberto === 'criando' && nomeMatilha.trim() === '') return;
     if (fluxoAberto === 'entrando' && (codigoConvite.trim() === '' || minhaFuncao.trim() === '')) return;
 
+    if (fluxoAberto === 'entrando') {
+      const codigoRealDaMatilha = await AsyncStorage.getItem('@PetGuardian_CodigoMatilha');
+      
+      if (codigoConvite.toUpperCase() !== codigoRealDaMatilha) {
+        Alert.alert(
+          'Código Inválido 🚫', 
+          'Não encontramos nenhuma matilha com esse código. Peça o código correto para o dono da matilha (Ex: PET-1234).'
+        );
+        return; 
+      }
+    }
+
     let nomeTratado = usuarioLogado.replace(' (Você)', '');
     const jaEstaNaLista = cuidadores.some(c => c.nome.replace(' (Você)', '') === nomeTratado);
     
@@ -115,12 +128,11 @@ export default function FamilyPetScreen({ navigation }: Props) {
     if (fluxoAberto === 'criando') {
       const numeroAleatorio = Math.floor(1000 + Math.random() * 9000);
       codigoFinal = `PET-${numeroAleatorio}`;
+      await AsyncStorage.setItem('@PetGuardian_CodigoMatilha', codigoFinal);
+      setCodigoMatilhaAtiva(codigoFinal);
     } else {
-      codigoFinal = codigoConvite.toUpperCase();
+      setCodigoMatilhaAtiva(codigoConvite.toUpperCase());
     }
-
-    await AsyncStorage.setItem('@PetGuardian_CodigoMatilha', codigoFinal);
-    setCodigoMatilhaAtiva(codigoFinal);
 
     await AsyncStorage.setItem('@PetGuardian_MatilhaAtiva', 'sim');
     setTemMatilha(true);
@@ -135,10 +147,10 @@ export default function FamilyPetScreen({ navigation }: Props) {
     setCuidadores(novaLista);
     await AsyncStorage.setItem(STORAGE_CUIDADORES, JSON.stringify(novaLista));
 
-    const temOutrasPessoas = novaLista.length > 0;
-    if (!temOutrasPessoas) {
-      await AsyncStorage.removeItem('@PetGuardian_MatilhaAtiva');
-      await AsyncStorage.removeItem('@PetGuardian_CodigoMatilha');
+    await AsyncStorage.removeItem('@PetGuardian_MatilhaAtiva');
+    await AsyncStorage.removeItem('@PetGuardian_CodigoMatilha');
+
+    if (novaLista.length === 0) {
       await AsyncStorage.removeItem(STORAGE_RECADOS);
       setRecados([]);
     }
@@ -212,7 +224,8 @@ export default function FamilyPetScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        <Modal visible={fluxoAberto !== 'nenhum'} transparent animationType="slide">
+        {/* Substituição do Modal pelo View Condicional Absoluto */}
+        {fluxoAberto !== 'nenhum' && (
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>
@@ -246,7 +259,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
-        </Modal>
+        )}
       </View>
     );
   }
@@ -285,7 +298,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
               
               {souDono && !isEuMesmo && !isDono && (
                 <TouchableOpacity onPress={() => removerCuidador(c.id)} style={styles.btnAcao}>
-                  <Text style={{ fontSize: 18 }}>🚪</Text>
+                  <Ionicons name="exit-outline" size={24} color="#FF3B30" />
                 </TouchableOpacity>
               )}
             </Animated.View>
@@ -341,13 +354,13 @@ export default function FamilyPetScreen({ navigation }: Props) {
                   <View style={styles.acoesRecado}>
                     {recado.autor === usuarioLogado && (
                       <TouchableOpacity onPress={() => prepararEdicao(recado)} style={styles.btnAcao}>
-                        <Text style={styles.iconeAcao}>✏️</Text>
+                         <Ionicons name="pencil" size={20} color="#666" />
                       </TouchableOpacity>
                     )}
                     
                     {(recado.autor === usuarioLogado || souDono) && (
                       <TouchableOpacity onPress={() => removerRecado(recado.id)} style={styles.btnAcao}>
-                        <Text style={styles.iconeAcao}>🗑️</Text>
+                         <Ionicons name="trash-outline" size={20} color="#FF3B30" />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -363,12 +376,8 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
       </ScrollView>
 
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalConviteVisivel}
-        onRequestClose={() => setModalConviteVisivel(false)}
-      >
+      {/* Substituição do Modal pelo View Condicional Absoluto */}
+      {modalConviteVisivel && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Convite da Matilha</Text>
@@ -386,7 +395,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+      )}
 
     </View>
   );
@@ -410,11 +419,9 @@ const styles = StyleSheet.create({
     }),
   },
   
-  // Estilos da versão do colega (sem centralizar)
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
   subSectionTitle: { fontSize: 14, color: '#666', marginBottom: 20 },
   
-  // Estilos para o estado de matilha vazia
   sectionTitleCenter: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4, textAlign: 'center' },
   subSectionTitleCenter: { fontSize: 14, color: '#666', marginBottom: 20, textAlign: 'center' },
 
@@ -443,9 +450,11 @@ const styles = StyleSheet.create({
   recadoHora: { fontSize: 11, color: '#999', marginTop: 4 },
   acoesRecado: { flexDirection: 'row', gap: 10, paddingTop: 4 },
   btnAcao: { padding: 8 },
-  iconeAcao: { fontSize: 16 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  
+  // A mágica de simular o Modal com View Absoluta
+  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 1000 },
   modalContent: { width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 },
+  
   modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 },
   modalInput: { borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' },
   modalBtnSalvar: { backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 },

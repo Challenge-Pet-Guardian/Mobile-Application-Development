@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, 
-  Modal, TextInput, KeyboardAvoidingView, Alert 
+  TextInput, KeyboardAvoidingView, Alert 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -9,7 +9,7 @@ import { STORAGE_USER_DATA, STORAGE_LOGADO, STORAGE_CUIDADORES, STORAGE_RECADOS 
 
 export default function UserProfileScreen({ navigation }: any) {
   // Dados principais de exibição
-  const [nome, setNome] = useState('A carregar...');
+  const [nome, setNome] = useState('Carregando...');
   const [email, setEmail] = useState('');
   
   // Controle de estado da Matilha
@@ -19,7 +19,7 @@ export default function UserProfileScreen({ navigation }: any) {
   const [xp, setXp] = useState(1250); 
   const [streak, setStreak] = useState(12); 
 
-  // Controle das janelas (Modais)
+  // Controle das janelas (Simulando Modais com View Condicional)
   const [modalAtivo, setModalAtivo] = useState<'nenhum' | 'editar' | 'faq' | 'contato'>('nenhum');
 
   // Estados temporários
@@ -69,7 +69,7 @@ export default function UserProfileScreen({ navigation }: any) {
 
   const salvarEdicao = async () => {
     if (!editNome || !editEmail || !editSenha) {
-      Alert.alert('Aviso', 'Por favor, preencha o nome, e-mail e palavra-passe.');
+      Alert.alert('Aviso', 'Por favor, preencha o nome, e-mail e senha.');
       return;
     }
     
@@ -115,7 +115,7 @@ export default function UserProfileScreen({ navigation }: any) {
       Alert.alert('Sucesso', 'Perfil atualizado com segurança!');
       setModalAtivo('nenhum');
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível guardar as alterações.');
+      Alert.alert('Erro', 'Não foi possível salvar as alterações.');
     }
   };
 
@@ -124,7 +124,7 @@ export default function UserProfileScreen({ navigation }: any) {
       Alert.alert('Aviso', 'Escreva uma mensagem antes de enviar.');
       return;
     }
-    Alert.alert('Mensagem Enviada!', 'A equipa do PetGuardian entrará em contacto brevemente.');
+    Alert.alert('Mensagem Enviada!', 'A equipe do PetGuardian entrará em contato em breve.');
     setMsgContato('');
     setModalAtivo('nenhum');
   };
@@ -193,7 +193,7 @@ export default function UserProfileScreen({ navigation }: any) {
             <View style={styles.menuIconWrapper}>
               <Ionicons name="person-outline" size={22} color="#0066FF" />
             </View>
-            <Text style={styles.menuText}>Gerir Perfil & Segurança</Text>
+            <Text style={styles.menuText}>Gerenciar Perfil & Segurança</Text>
             <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
           </TouchableOpacity>
           
@@ -209,7 +209,7 @@ export default function UserProfileScreen({ navigation }: any) {
             <View style={styles.menuIconWrapper}>
               <Ionicons name="chatbubbles-outline" size={22} color="#0066FF" />
             </View>
-            <Text style={styles.menuText}>Contacto / Suporte</Text>
+            <Text style={styles.menuText}>Contato / Suporte</Text>
             <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
           </TouchableOpacity>
 
@@ -223,14 +223,14 @@ export default function UserProfileScreen({ navigation }: any) {
       </ScrollView>
 
       {/* ========================================== */}
-      {/* MODAL 1: EDITAR PERFIL */}
+      {/* MODAL 1 (VIEW ABSOLUTA): EDITAR PERFIL */}
       {/* ========================================== */}
-      <Modal visible={modalAtivo === 'editar'} transparent animationType="fade">
+      {modalAtivo === 'editar' && (
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Gerir Perfil</Text>
+              <Text style={styles.modalTitle}>Gerenciar Perfil</Text>
               <TouchableOpacity onPress={() => setModalAtivo('nenhum')} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color="#718096" />
               </TouchableOpacity>
@@ -242,20 +242,20 @@ export default function UserProfileScreen({ navigation }: any) {
             <Text style={styles.inputLabel}>E-mail</Text>
             <TextInput style={styles.modalInput} value={editEmail} onChangeText={setEditEmail} keyboardType="email-address" autoCapitalize="none" />
 
-            <Text style={styles.inputLabel}>Confirmar Palavra-passe</Text>
+            <Text style={styles.inputLabel}>Confirmar Senha</Text>
             <TextInput style={styles.modalInput} value={editSenha} onChangeText={setEditSenha} secureTextEntry />
 
             <TouchableOpacity style={styles.modalBtnSalvar} onPress={salvarEdicao}>
-              <Text style={styles.modalBtnSalvarText}>Guardar Alterações</Text>
+              <Text style={styles.modalBtnSalvarText}>Salvar Alterações</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
-      </Modal>
+      )}
 
       {/* ========================================== */}
-      {/* MODAL 2: PERGUNTAS FREQUENTES (FAQ) */}
+      {/* MODAL 2 (VIEW ABSOLUTA): PERGUNTAS FREQUENTES (FAQ) */}
       {/* ========================================== */}
-      <Modal visible={modalAtivo === 'faq'} transparent animationType="fade">
+      {modalAtivo === 'faq' && (
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { maxHeight: '85%' }]}>
             
@@ -275,13 +275,13 @@ export default function UserProfileScreen({ navigation }: any) {
                   <Ionicons name="people-outline" size={20} color="#0066FF" />
                   <Text style={styles.faqQuestion}>Como convidar familiares?</Text>
                 </View>
-                <Text style={styles.faqAnswer}>No separador "Family Pet", clique em "Convidar Familiar" para gerar um código seguro. Partilhe este código para eles entrarem na sua matilha e dividirem os cuidados.</Text>
+                <Text style={styles.faqAnswer}>No separador "Family Pet", clique em "Convidar Familiar" para gerar um código seguro. Compartilhe este código para eles entrarem na sua matilha e dividirem os cuidados.</Text>
               </View>
 
               <View style={styles.faqCard}>
                 <View style={styles.faqQuestionRow}>
                   <Ionicons name="checkmark-done-circle-outline" size={22} color="#0066FF" />
-                  <Text style={styles.faqQuestion}>Se eu fizer uma tarefa, os outros vêem?</Text>
+                  <Text style={styles.faqQuestion}>Se eu fizer uma tarefa, os outros veem?</Text>
                 </View>
                 <Text style={styles.faqAnswer}>Sim! A rotina é sincronizada. Se marcar que já deu a medicação ou ração, os restantes tutores saberão que o pet já foi cuidado e evitam dar a dose repetida.</Text>
               </View>
@@ -304,12 +304,12 @@ export default function UserProfileScreen({ navigation }: any) {
             </ScrollView>
           </View>
         </View>
-      </Modal>
+      )}
 
       {/* ========================================== */}
-      {/* MODAL 3: CONTATO / SUPORTE */}
+      {/* MODAL 3 (VIEW ABSOLUTA): CONTATO / SUPORTE */}
       {/* ========================================== */}
-      <Modal visible={modalAtivo === 'contato'} transparent animationType="fade">
+      {modalAtivo === 'contato' && (
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             
@@ -320,7 +320,7 @@ export default function UserProfileScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.contatoDesc}>Encontrou um problema ou tem uma sugestão? Envie a sua mensagem diretamente para a nossa equipa de desenvolvimento.</Text>
+            <Text style={styles.contatoDesc}>Encontrou um problema ou tem uma sugestão? Envie a sua mensagem diretamente para a nossa equipe de desenvolvimento.</Text>
             
             <TextInput 
               style={[styles.modalInput, { height: 140, textAlignVertical: 'top' }]}
@@ -337,7 +337,7 @@ export default function UserProfileScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
-      </Modal>
+      )}
 
     </View>
   );
@@ -367,7 +367,15 @@ const styles = StyleSheet.create({
   menuIconWrapper: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#EBF4FF', justifyContent: 'center', alignItems: 'center' },
   menuText: { flex: 1, marginLeft: 15, fontSize: 16, color: '#2D3748', fontWeight: '600' },
   
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(10, 22, 40, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  // Transformando a View num Modal perfeito
+  modalOverlay: { 
+    ...StyleSheet.absoluteFillObject, 
+    backgroundColor: 'rgba(10, 22, 40, 0.6)', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 20,
+    zIndex: 1000 
+  },
   modalContent: { width: '100%', backgroundColor: '#FFF', borderRadius: 24, padding: 24, elevation: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 15 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
   modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#1A202C' },
