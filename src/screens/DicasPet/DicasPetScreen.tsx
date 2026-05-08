@@ -4,6 +4,7 @@ import {
   TouchableOpacity, SafeAreaView 
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Header } from '../../components/Header';
 
 // Simulando a TB_DICA do seu banco de dados Oracle
@@ -70,17 +71,20 @@ export default function DicasScreen() {
         showsVerticalScrollIndicator={false}
         keyExtractor={item => item.id}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity activeOpacity={0.8} style={styles.tipCard}>
-            <View style={[styles.iconContainer, { backgroundColor: item.cor + '15' }]}>
-              {/* @ts-ignore */}
-              <MaterialCommunityIcons name={item.icone} size={28} color={item.cor} />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.tipTitle}>{item.titulo}</Text>
-              <Text style={styles.tipDesc}>{item.desc}</Text>
-            </View>
-          </TouchableOpacity>
+        renderItem={({ item, index }) => (
+          // Adicionamos a animação em cascata (delay multiplicado pelo index)
+          <Animated.View entering={FadeInDown.delay(index * 100)}>
+            <TouchableOpacity activeOpacity={0.8} style={styles.tipCard}>
+              <View style={[styles.iconContainer, { backgroundColor: item.cor + '15' }]}>
+                {/* @ts-ignore */}
+                <MaterialCommunityIcons name={item.icone} size={28} color={item.cor} />
+              </View>
+              <View style={styles.textContainer}>
+                <Text style={styles.tipTitle}>{item.titulo}</Text>
+                <Text style={styles.tipDesc}>{item.desc}</Text>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
         )}
       />
 
