@@ -5,8 +5,13 @@ export const COLORS = {
     white: '#FFF',
     black: '#000',
     gray: '#64748B',
-    lightGray: '#E2E8F0',
     success: '#00A859',
     danger: '#FF6565',
-    warning: '#FFC800',
+};
+
+export const TEXTS = {
+    nextTask: 'Próxima Tarefa',
+    tipOfDay: 'Dica do Dia',
+    weeklyStreak: 'Ofensiva da Semana',
+    clinicalSummary: 'Histórico Clínico Resumido',
 };

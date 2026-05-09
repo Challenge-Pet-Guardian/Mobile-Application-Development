@@ -1,10 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-
-type HeaderProps = {
-    title?: string;
-};
+import { HeaderProps } from '../../types'; 
 
 export function Header({ title }: HeaderProps) {
     return (
@@ -28,27 +25,9 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         borderRadius: 20,
         backgroundColor: "#134879",
-        shadowColor: '#1265d1',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
         elevation: 6,
     },
-    brandContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-    },
-    brandText: {
-        fontSize: 18,
-        color: "#FFF",
-        fontWeight: "bold",
-        letterSpacing: 0.5,
-    },
-    pageTitle: {
-        fontSize: 15,
-        color: "#FFF",
-        fontWeight: "600",
-        opacity: 0.9,
-    }
+    brandContainer: { flexDirection: "row", alignItems: "center", gap: 10 },
+    brandText: { fontSize: 18, color: "#FFF", fontWeight: "bold" },
+    pageTitle: { fontSize: 15, color: "#FFF", fontWeight: "600", opacity: 0.9 }
 });
