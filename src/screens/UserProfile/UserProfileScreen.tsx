@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { STORAGE_USER_DATA, STORAGE_LOGADO, STORAGE_CUIDADORES, STORAGE_RECADOS } from '../../constants/Keys';
+import { STORAGE_KEYS } from '../../constants/Keys';
 
 export default function UserProfileScreen({ navigation }: any) {
   // Dados principais de exibição
@@ -19,8 +19,8 @@ export default function UserProfileScreen({ navigation }: any) {
   const [xp, setXp] = useState(1250); 
   const [streak, setStreak] = useState(12); 
 
-  // Controle das janelas (Simulando Modais com View Condicional)
-  const [modalAtivo, setModalAtivo] = useState<'nenhum' | 'editar' | 'faq' | 'contato'>('nenhum');
+  // Controle das janelas (Simulando Janelas com View)
+  const [janelaAberta, setJanelaAberta] = useState<'nenhum' | 'editar' | 'faq' | 'contato'>('nenhum');
 
   // Estados temporários
   const [editNome, setEditNome] = useState('');
@@ -38,8 +38,7 @@ export default function UserProfileScreen({ navigation }: any) {
 
   const carregarUsuario = async () => {
     try {
-      // 1. Carrega os dados do Usuário
-      const userDataString = await AsyncStorage.getItem(STORAGE_USER_DATA);
+      const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
       if (userDataString) {
         const userData = JSON.parse(userDataString);
         setNome(userData.nome);
@@ -49,7 +48,6 @@ export default function UserProfileScreen({ navigation }: any) {
         setEditSenha(userData.senha || '');
       }
 
-      // 2. Verifica se está numa Matilha para arrumar os cards de Gamificação!
       const matilhaAtiva = await AsyncStorage.getItem('@PetGuardian_MatilhaAtiva');
       setEmMatilha(matilhaAtiva === 'sim');
 
@@ -60,7 +58,7 @@ export default function UserProfileScreen({ navigation }: any) {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem(STORAGE_LOGADO);
+      await AsyncStorage.removeItem(STORAGE_KEYS.LOGADO);
       navigation.replace('Welcome');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
@@ -78,13 +76,13 @@ export default function UserProfileScreen({ navigation }: any) {
       const nomeNovo = editNome.trim();
 
       // Atualizamos o Perfil Principal
-      const userDataString = await AsyncStorage.getItem(STORAGE_USER_DATA);
+      const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
       const userData = userDataString ? JSON.parse(userDataString) : {};
       const novosDados = { ...userData, nome: nomeNovo, email: editEmail.trim(), senha: editSenha };
-      await AsyncStorage.setItem(STORAGE_USER_DATA, JSON.stringify(novosDados));
+      await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(novosDados));
       
       // SINCRONIZAÇÃO DA MATILHA
-      const cuidadoresString = await AsyncStorage.getItem(STORAGE_CUIDADORES);
+      const cuidadoresString = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
       if (cuidadoresString) {
         let listaCuidadores = JSON.parse(cuidadoresString);
         listaCuidadores = listaCuidadores.map((c: any) => {
@@ -94,11 +92,11 @@ export default function UserProfileScreen({ navigation }: any) {
           }
           return c;
         });
-        await AsyncStorage.setItem(STORAGE_CUIDADORES, JSON.stringify(listaCuidadores));
+        await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(listaCuidadores));
       }
 
       // SINCRONIZAÇÃO DO MURAL
-      const recadosString = await AsyncStorage.getItem(STORAGE_RECADOS);
+      const recadosString = await AsyncStorage.getItem(STORAGE_KEYS.RECADOS);
       if (recadosString) {
         let listaRecados = JSON.parse(recadosString);
         listaRecados = listaRecados.map((r: any) => {
@@ -107,13 +105,13 @@ export default function UserProfileScreen({ navigation }: any) {
           }
           return r;
         });
-        await AsyncStorage.setItem(STORAGE_RECADOS, JSON.stringify(listaRecados));
+        await AsyncStorage.setItem(STORAGE_KEYS.RECADOS, JSON.stringify(listaRecados));
       }
       
       setNome(nomeNovo);
       setEmail(editEmail);
-      Alert.alert('Sucesso', 'Perfil atualizado com segurança!');
-      setModalAtivo('nenhum');
+      Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
+      setJanelaAberta('nenhum');
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar as alterações.');
     }
@@ -126,7 +124,7 @@ export default function UserProfileScreen({ navigation }: any) {
     }
     Alert.alert('Mensagem Enviada!', 'A equipe do PetGuardian entrará em contato em breve.');
     setMsgContato('');
-    setModalAtivo('nenhum');
+    setJanelaAberta('nenhum');
   };
 
   const StatCard = ({ icon, label, value, color }: any) => (
@@ -150,7 +148,7 @@ export default function UserProfileScreen({ navigation }: any) {
             <View style={styles.avatarIconWrapper}>
                <Ionicons name="person" size={50} color="#FFF" />
             </View>
-            <TouchableOpacity style={styles.editBadge} onPress={() => setModalAtivo('editar')}>
+            <TouchableOpacity style={styles.editBadge} onPress={() => setJanelaAberta('editar')}>
               <MaterialCommunityIcons name="pencil" size={16} color="#FFF" />
             </TouchableOpacity>
           </View>
@@ -158,7 +156,6 @@ export default function UserProfileScreen({ navigation }: any) {
           <Text style={styles.userEmail}>{email}</Text>
         </View>
 
-        {/* Lógica Condicional: Se não estiver em matilha, zera os stats e avisa o usuário! */}
         <View style={styles.statsRow}>
           <StatCard 
             icon="fire" 
@@ -186,10 +183,10 @@ export default function UserProfileScreen({ navigation }: any) {
           </Text>
         )}
 
-        <View style={styles.menuContainer}>
+        <div style={styles.menuContainer}>
           <Text style={styles.menuTitle}>Conta</Text>
           
-          <TouchableOpacity style={styles.menuItem} onPress={() => setModalAtivo('editar')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => setJanelaAberta('editar')}>
             <View style={styles.menuIconWrapper}>
               <Ionicons name="person-outline" size={22} color="#0066FF" />
             </View>
@@ -197,7 +194,7 @@ export default function UserProfileScreen({ navigation }: any) {
             <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.menuItem} onPress={() => setModalAtivo('faq')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => setJanelaAberta('faq')}>
             <View style={styles.menuIconWrapper}>
               <Ionicons name="help-buoy-outline" size={22} color="#0066FF" />
             </View>
@@ -205,7 +202,7 @@ export default function UserProfileScreen({ navigation }: any) {
             <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => setModalAtivo('contato')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => setJanelaAberta('contato')}>
             <View style={styles.menuIconWrapper}>
               <Ionicons name="chatbubbles-outline" size={22} color="#0066FF" />
             </View>
@@ -219,19 +216,17 @@ export default function UserProfileScreen({ navigation }: any) {
             </View>
             <Text style={[styles.menuText, { color: '#E53E3E' }]}>Sair da Conta</Text>
           </TouchableOpacity>
-        </View>
+        </div>
       </ScrollView>
 
-      {/* ========================================== */}
-      {/* MODAL 1 (VIEW ABSOLUTA): EDITAR PERFIL */}
-      {/* ========================================== */}
-      {modalAtivo === 'editar' && (
+      {/* JANELA SOBREPOSTA: EDITAR PERFIL */}
+      {janelaAberta === 'editar' && (
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Gerenciar Perfil</Text>
-              <TouchableOpacity onPress={() => setModalAtivo('nenhum')} style={styles.closeBtn}>
+              <TouchableOpacity onPress={() => setJanelaAberta('nenhum')} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color="#718096" />
               </TouchableOpacity>
             </View>
@@ -252,10 +247,8 @@ export default function UserProfileScreen({ navigation }: any) {
         </KeyboardAvoidingView>
       )}
 
-      {/* ========================================== */}
-      {/* MODAL 2 (VIEW ABSOLUTA): PERGUNTAS FREQUENTES (FAQ) */}
-      {/* ========================================== */}
-      {modalAtivo === 'faq' && (
+      {/* JANELA SOBREPOSTA: FAQ */}
+      {janelaAberta === 'faq' && (
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { maxHeight: '85%' }]}>
             
@@ -264,7 +257,7 @@ export default function UserProfileScreen({ navigation }: any) {
                 <Ionicons name="help-buoy" size={24} color="#0066FF" style={{marginRight: 8}} />
                 <Text style={styles.modalTitle}>Dúvidas Frequentes</Text>
               </View>
-              <TouchableOpacity onPress={() => setModalAtivo('nenhum')} style={styles.closeBtn}>
+              <TouchableOpacity onPress={() => setJanelaAberta('nenhum')} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color="#718096" />
               </TouchableOpacity>
             </View>
@@ -275,7 +268,7 @@ export default function UserProfileScreen({ navigation }: any) {
                   <Ionicons name="people-outline" size={20} color="#0066FF" />
                   <Text style={styles.faqQuestion}>Como convidar familiares?</Text>
                 </View>
-                <Text style={styles.faqAnswer}>No separador "Family Pet", clique em "Convidar Familiar" para gerar um código seguro. Compartilhe este código para eles entrarem na sua matilha e dividirem os cuidados.</Text>
+                <Text style={styles.faqAnswer}>Na aba "Family Pet", clique em "Convidar Familiar" para gerar um código seguro. Compartilhe este código para eles entrarem na sua matilha.</Text>
               </View>
 
               <View style={styles.faqCard}>
@@ -283,44 +276,25 @@ export default function UserProfileScreen({ navigation }: any) {
                   <Ionicons name="checkmark-done-circle-outline" size={22} color="#0066FF" />
                   <Text style={styles.faqQuestion}>Se eu fizer uma tarefa, os outros veem?</Text>
                 </View>
-                <Text style={styles.faqAnswer}>Sim! A rotina é sincronizada. Se marcar que já deu a medicação ou ração, os restantes tutores saberão que o pet já foi cuidado e evitam dar a dose repetida.</Text>
-              </View>
-
-              <View style={styles.faqCard}>
-                <View style={styles.faqQuestionRow}>
-                  <Ionicons name="star-outline" size={20} color="#0066FF" />
-                  <Text style={styles.faqQuestion}>Como funciona o ganho de XP?</Text>
-                </View>
-                <Text style={styles.faqAnswer}>Sempre que conclui uma tarefa agendada para o seu pet (como passeios ou higiene), ganha pontos de Experiência (XP). Quem tiver mais XP lidera o Ranking da casa!</Text>
-              </View>
-
-              <View style={styles.faqCard}>
-                <View style={styles.faqQuestionRow}>
-                  <Ionicons name="flame-outline" size={20} color="#0066FF" />
-                  <Text style={styles.faqQuestion}>O que é a Ofensiva de dias?</Text>
-                </View>
-                <Text style={styles.faqAnswer}>A Ofensiva (ou Streak) mostra quantos dias seguidos a sua matilha cuidou de todas as tarefas obrigatórias sem falhar nenhuma. Mantenha a chama acesa!</Text>
+                <Text style={styles.faqAnswer}>Sim! A rotina é sincronizada. Se marcar que já deu a ração, os outros tutores saberão que o pet já foi cuidado.</Text>
               </View>
             </ScrollView>
           </View>
         </View>
       )}
 
-      {/* ========================================== */}
-      {/* MODAL 3 (VIEW ABSOLUTA): CONTATO / SUPORTE */}
-      {/* ========================================== */}
-      {modalAtivo === 'contato' && (
+      {/* JANELA SOBREPOSTA: CONTATO */}
+      {janelaAberta === 'contato' && (
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Suporte Técnico</Text>
-              <TouchableOpacity onPress={() => setModalAtivo('nenhum')} style={styles.closeBtn}>
+              <TouchableOpacity onPress={() => setJanelaAberta('nenhum')} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color="#718096" />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.contatoDesc}>Encontrou um problema ou tem uma sugestão? Envie a sua mensagem diretamente para a nossa equipe de desenvolvimento.</Text>
+            <Text style={styles.contatoDesc}>Encontrou um problema? Envie sua mensagem para nossa equipe de desenvolvimento.</Text>
             
             <TextInput 
               style={[styles.modalInput, { height: 140, textAlignVertical: 'top' }]}
@@ -352,41 +326,40 @@ const styles = StyleSheet.create({
   editBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#0066FF', width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#F8FAFC' },
   userName: { fontSize: 24, fontWeight: 'bold', color: '#1A202C', marginTop: 15 },
   userEmail: { fontSize: 15, color: '#718096', marginTop: 4 },
-  
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: 25 },
   statCard: { flex: 1, backgroundColor: '#FFF', marginHorizontal: 5, padding: 15, borderRadius: 20, alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10 },
   statIconCircle: { width: 45, height: 45, borderRadius: 22.5, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
   statValue: { fontSize: 16, fontWeight: 'bold' },
   statLabel: { fontSize: 12, color: '#A0AEC0', marginTop: 2 },
-  
   avisoSemMatilha: { textAlign: 'center', color: '#718096', fontSize: 13, marginTop: 15, paddingHorizontal: 40 },
-
   menuContainer: { marginTop: 35, paddingHorizontal: 20 },
   menuTitle: { fontSize: 16, fontWeight: 'bold', color: '#4A5568', marginBottom: 15, marginLeft: 5 },
   menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 12, borderRadius: 16, marginBottom: 12, elevation: 1, shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 5 },
   menuIconWrapper: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#EBF4FF', justifyContent: 'center', alignItems: 'center' },
   menuText: { flex: 1, marginLeft: 15, fontSize: 16, color: '#2D3748', fontWeight: '600' },
   
-  // Transformando a View num Modal perfeito
+ 
   modalOverlay: { 
-    ...StyleSheet.absoluteFillObject, 
+    position: 'absolute', 
+    top: 0, 
+    bottom: 0, 
+    left: 0, 
+    right: 0,
     backgroundColor: 'rgba(10, 22, 40, 0.6)', 
     justifyContent: 'center', 
     alignItems: 'center', 
     padding: 20,
     zIndex: 1000 
   },
+  
   modalContent: { width: '100%', backgroundColor: '#FFF', borderRadius: 24, padding: 24, elevation: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 15 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
   modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#1A202C' },
   closeBtn: { padding: 4, backgroundColor: '#F7FAFC', borderRadius: 20 },
-  
   inputLabel: { fontSize: 14, fontWeight: '700', color: '#4A5568', marginBottom: 8, marginLeft: 4 },
   modalInput: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 14, padding: 16, marginBottom: 18, fontSize: 16, color: '#2D3748' },
-  
   modalBtnSalvar: { backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginTop: 5, flexDirection: 'row', justifyContent: 'center' },
   modalBtnSalvarText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-  
   faqCard: { backgroundColor: '#F8FAFC', padding: 20, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#EDF2F7' },
   faqQuestionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   faqQuestion: { fontWeight: 'bold', color: '#1A202C', fontSize: 16, marginLeft: 8, flex: 1 },

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { STORAGE_CUIDADORES } from '../../constants/Keys';
+import { STORAGE_KEYS } from '../../constants/Keys'; // <-- CORRIGIDO AQUI!
 
 const maxWidth = 400;
 
@@ -20,19 +20,12 @@ export default function AddMemberScreen({ navigation }: Props) {
       return;
     }
 
-    const novo = {
-      id: Date.now().toString(),
-      nome,
-      funcao
-    };
-
-    const dados = await AsyncStorage.getItem(STORAGE_CUIDADORES);
+    const novo = { id: Date.now().toString(), nome, funcao };
+    // <-- CORRIGIDO AQUI TBM!
+    const dados = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
     const lista = dados ? JSON.parse(dados) : [];
-
     lista.push(novo);
-
-    await AsyncStorage.setItem(STORAGE_CUIDADORES, JSON.stringify(lista));
-
+    await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(lista));
     navigation.goBack();
   };
 
@@ -55,7 +48,6 @@ export default function AddMemberScreen({ navigation }: Props) {
           onChangeText={setFuncao}
         />
 
-        {/* REQUISITO 3: Exibição Dinâmica do Estado do Formulário */}
         {(nome !== '' || funcao !== '') && (
           <View style={styles.previewContainer}>
             <Text style={styles.previewText}>

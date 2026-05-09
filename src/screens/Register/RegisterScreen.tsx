@@ -1,18 +1,8 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert, 
-  Platform,
-  KeyboardAvoidingView,
-  ScrollView
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { STORAGE_USER_DATA } from '../../constants/Keys';
+import { STORAGE_KEYS } from '../../constants/Keys'; 
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -23,13 +13,11 @@ export default function RegisterScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  // Estados para as mensagens de erro visuais
   const [nomeErro, setNomeErro] = useState('');
   const [emailErro, setEmailErro] = useState('');
   const [senhaErro, setSenhaErro] = useState('');
 
   const handleRegister = async () => {
-    // 1. Limpa os erros antes de testar
     setNomeErro('');
     setEmailErro('');
     setSenhaErro('');
@@ -37,7 +25,6 @@ export default function RegisterScreen({ navigation }: Props) {
     let temErro = false;
     let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
 
-    // 2. Faz a validação de todos os campos
     if (nome.trim() === '') {
       setNomeErro('O nome é obrigatório!');
       temErro = true;
@@ -59,15 +46,14 @@ export default function RegisterScreen({ navigation }: Props) {
       temErro = true;
     }
 
-    // 3. Se algum campo falhou, para a função aqui
     if (temErro) {
       return;
     }
 
-    // 4. Se passou em tudo, salva os dados!
     try {
       const userData = { nome, email, senha };
-      await AsyncStorage.setItem(STORAGE_USER_DATA, JSON.stringify(userData));
+     
+      await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
       
       Alert.alert('Sucesso!', 'A sua conta foi criada. Faça login para entrar na matilha.');
       navigation.goBack();
@@ -77,20 +63,15 @@ export default function RegisterScreen({ navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.mainContainer} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <KeyboardAvoidingView style={styles.mainContainer} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.contentWrapper}>
           
-          {/* Cabeçalho */}
           <View style={styles.headerContainer}>
             <Text style={styles.title}>Criar Conta</Text>
             <Text style={styles.subtitle}>Preencha seus dados para começar a usar o PetGuardian.</Text>
           </View>
 
-          {/* Formulário num Card Branco */}
           <View style={styles.formContainer}>
             
             <Text style={styles.inputLabel}>Seu Nome</Text>
@@ -99,10 +80,7 @@ export default function RegisterScreen({ navigation }: Props) {
               placeholder="Como quer ser chamado?"
               placeholderTextColor="#A0AEC0"
               value={nome}
-              onChangeText={(texto) => {
-                setNome(texto);
-                setNomeErro(''); // Limpa o erro ao digitar
-              }}
+              onChangeText={(texto) => { setNome(texto); setNomeErro(''); }}
             />
             {nomeErro !== '' && <Text style={styles.erroTexto}>{nomeErro}</Text>}
 
@@ -114,10 +92,7 @@ export default function RegisterScreen({ navigation }: Props) {
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
-              onChangeText={(texto) => {
-                setEmail(texto);
-                setEmailErro(''); // Limpa o erro ao digitar
-              }}
+              onChangeText={(texto) => { setEmail(texto); setEmailErro(''); }}
             />
             {emailErro !== '' && <Text style={styles.erroTexto}>{emailErro}</Text>}
 
@@ -128,10 +103,7 @@ export default function RegisterScreen({ navigation }: Props) {
               placeholderTextColor="#A0AEC0"
               secureTextEntry
               value={senha}
-              onChangeText={(texto) => {
-                setSenha(texto);
-                setSenhaErro(''); // Limpa o erro ao digitar
-              }}
+              onChangeText={(texto) => { setSenha(texto); setSenhaErro(''); }}
             />
             {senhaErro !== '' && <Text style={styles.erroTexto}>{senhaErro}</Text>}
 
@@ -170,10 +142,8 @@ const styles = StyleSheet.create({
   },
   inputLabel: { fontSize: 14, fontWeight: '600', color: '#4A5568', marginBottom: 8, marginLeft: 4 },
   input: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#E2E8F0', padding: 16, borderRadius: 16, marginBottom: 20, fontSize: 16, color: '#2D3748' },
-  
   inputErro: { borderColor: '#E53E3E', borderWidth: 1.5, backgroundColor: '#FFF5F5' },
   erroTexto: { color: '#E53E3E', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 8, fontWeight: '500' },
-  
   button: { backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginTop: 10 },
   buttonShadow: {
     ...Platform.select({

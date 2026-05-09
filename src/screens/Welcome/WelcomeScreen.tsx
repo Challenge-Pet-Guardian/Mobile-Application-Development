@@ -11,7 +11,7 @@ import {
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { STORAGE_LOGADO } from '../../constants/Keys';
+import { STORAGE_KEYS } from '../../constants/Keys'; 
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,7 +24,8 @@ export default function WelcomeScreen({ navigation }: Props) {
   useEffect(() => {
     const verificarLogin = async () => {
       try {
-        const logado = await AsyncStorage.getItem(STORAGE_LOGADO);
+    
+        const logado = await AsyncStorage.getItem(STORAGE_KEYS.LOGADO);
         if (logado === 'sim') {
           navigation.replace('Tabs');
         }
@@ -85,7 +86,7 @@ export default function WelcomeScreen({ navigation }: Props) {
           </View>
         </Animated.View>
 
-        {/* REQUISITO: Animação com Reanimated (FadeInDown com delay) */}
+       
         <Animated.View
           entering={FadeInDown.delay(400).duration(600)}
           style={styles.actionsBlock}
@@ -123,6 +124,7 @@ export default function WelcomeScreen({ navigation }: Props) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

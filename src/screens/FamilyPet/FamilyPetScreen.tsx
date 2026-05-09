@@ -1,30 +1,26 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput, KeyboardAvoidingView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput, KeyboardAvoidingView, Alert, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons'; // <-- Importando os ícones profissionais!
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'; 
 
-import { STORAGE_CUIDADORES, STORAGE_RECADOS, STORAGE_USER_DATA } from '../../constants/Keys';
+import { STORAGE_KEYS } from '../../constants/Keys';
 import { Header } from '../../components/Header';
 
-type Props = {
-  navigation: NativeStackNavigationProp<any>;
-};
+// Array de avatares para mostrar a carinha dos pets na lista!
+const AVATARES_DISPONIVEIS = [
+  { id: '1', imagem: require('../../assets/img/cachorro-01.jpg') }, 
+  { id: '2', imagem: require('../../assets/img/cachorro-02.jpg') }, 
+  { id: '3', imagem: require('../../assets/img/gato-01.jpg') }, 
+  { id: '4', imagem: require('../../assets/img/gato-02.jpg') }, 
+  { id: '5', imagem: require('../../assets/img/coelho.jpg') }, 
+];
 
-type Recado = {
-  id: string;
-  texto: string;
-  hora: string;
-  autor: string; 
-};
-
-type Cuidador = {
-  id: string;
-  nome: string;
-  funcao: string;
-};
+type Props = { navigation: NativeStackNavigationProp<any>; };
+type Recado = { id: string; texto: string; hora: string; autor: string; };
+type Cuidador = { id: string; nome: string; funcao: string; };
 
 export default function FamilyPetScreen({ navigation }: Props) {
   const [temMatilha, setTemMatilha] = useState(false);
@@ -32,36 +28,41 @@ export default function FamilyPetScreen({ navigation }: Props) {
   const [nomeMatilha, setNomeMatilha] = useState('');
   const [codigoConvite, setCodigoConvite] = useState('');
   const [minhaFuncao, setMinhaFuncao] = useState('');
+  
   const [codigoMatilhaAtiva, setCodigoMatilhaAtiva] = useState('');
+  const [nomeDaMatilhaAtual, setNomeDaMatilhaAtual] = useState('Family Pet'); // Novo: Guarda o nome da casa!
 
   const [cuidadores, setCuidadores] = useState<Cuidador[]>([]);
   const [recados, setRecados] = useState<Recado[]>([]);
+  const [petsDaMatilha, setPetsDaMatilha] = useState<any[]>([]); // Novo: Guarda os pets!
+
   const [novoRecado, setNovoRecado] = useState('');
   const [usuarioLogado, setUsuarioLogado] = useState('Tutor');
   const [editandoId, setEditandoId] = useState<string | null>(null);
-
-  const [modalConviteVisivel, setModalConviteVisivel] = useState(false);
+  const [caixaConviteVisivel, setCaixaConviteVisivel] = useState(false);
 
   const carregarDados = async () => {
     try {
       let nomeUsuarioAtual = 'Tutor';
-      const dadosConta = await AsyncStorage.getItem(STORAGE_USER_DATA);
+      const dadosConta = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
       if (dadosConta) {
         const conta = JSON.parse(dadosConta);
-        if (conta.nome) {
-          nomeUsuarioAtual = conta.nome;
-          setUsuarioLogado(conta.nome);
-        }
+        if (conta.nome) { nomeUsuarioAtual = conta.nome; setUsuarioLogado(conta.nome); }
       }
+
+      // Carrega o Nome da Matilha
+      const nomeSalvo = await AsyncStorage.getItem('@PetGuardian_NomeMatilha');
+      if (nomeSalvo) setNomeDaMatilhaAtual(nomeSalvo);
+
+      // Carrega os Pets
+      const petsSalvos = await AsyncStorage.getItem('@PetGuardian_ListaPets');
+      if (petsSalvos) setPetsDaMatilha(JSON.parse(petsSalvos));
 
       let listaCuidadores: Cuidador[] = [];
-      const dadosCuidadores = await AsyncStorage.getItem(STORAGE_CUIDADORES);
-      if (dadosCuidadores) {
-        listaCuidadores = JSON.parse(dadosCuidadores);
-        setCuidadores(listaCuidadores);
-      }
+      const dadosCuidadores = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
+      if (dadosCuidadores) { listaCuidadores = JSON.parse(dadosCuidadores); setCuidadores(listaCuidadores); }
 
-      const dadosRecados = await AsyncStorage.getItem(STORAGE_RECADOS);
+      const dadosRecados = await AsyncStorage.getItem(STORAGE_KEYS.RECADOS);
       if (dadosRecados) setRecados(JSON.parse(dadosRecados));
 
       const matilhaSalva = await AsyncStorage.getItem('@PetGuardian_MatilhaAtiva');
@@ -75,23 +76,11 @@ export default function FamilyPetScreen({ navigation }: Props) {
       if (codigoSalvo) setCodigoMatilhaAtiva(codigoSalvo);
       
       const usuarioEstaNaLista = listaCuidadores.some(c => c.nome.replace(' (Você)', '') === nomeUsuarioAtual);
-
-      if (matilhaSalva && usuarioEstaNaLista) {
-        setTemMatilha(true);
-      } else {
-        setTemMatilha(false);
-      }
-
-    } catch (error) {
-      console.log(error);
-    }
+      setTemMatilha(matilhaSalva && usuarioEstaNaLista ? true : false);
+    } catch (error) { console.log(error); }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      carregarDados();
-    }, [])
-  );
+  useFocusEffect(useCallback(() => { carregarDados(); }, []));
 
   const finalizarAcaoMatilha = async () => {
     if (fluxoAberto === 'criando' && nomeMatilha.trim() === '') return;
@@ -99,35 +88,36 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
     if (fluxoAberto === 'entrando') {
       const codigoRealDaMatilha = await AsyncStorage.getItem('@PetGuardian_CodigoMatilha');
-      
       if (codigoConvite.toUpperCase() !== codigoRealDaMatilha) {
-        Alert.alert(
-          'Código Inválido 🚫', 
-          'Não encontramos nenhuma matilha com esse código. Peça o código correto para o dono da matilha (Ex: PET-1234).'
-        );
+        Alert.alert('Código Inválido 🚫', 'Não encontramos nenhuma matilha com esse código.');
         return; 
       }
     }
 
-    let nomeTratado = usuarioLogado.replace(' (Você)', '');
-    const jaEstaNaLista = cuidadores.some(c => c.nome.replace(' (Você)', '') === nomeTratado);
-    
-    if (!jaEstaNaLista) {
-      const meuUsuario: Cuidador = {
-        id: Date.now().toString(),
-        nome: nomeTratado,
-        funcao: fluxoAberto === 'criando' ? 'Dono(a) da Matilha' : minhaFuncao
-      };
+    let novaListaCuidadores = [...cuidadores];
+
+    // SOLUÇÃO DOS DOIS DONOS: Se estiver criando uma casa nova, limpa a sujeira antiga!
+    if (fluxoAberto === 'criando') {
+      novaListaCuidadores = [];
+      await AsyncStorage.setItem('@PetGuardian_NomeMatilha', nomeMatilha);
+      setNomeDaMatilhaAtual(nomeMatilha);
       
-      const novaLista = [meuUsuario, ...cuidadores];
-      setCuidadores(novaLista);
-      await AsyncStorage.setItem(STORAGE_CUIDADORES, JSON.stringify(novaLista));
+      setRecados([]); // Limpa o mural velho
+      await AsyncStorage.removeItem(STORAGE_KEYS.RECADOS);
     }
 
-    let codigoFinal = '';
+    let nomeTratado = usuarioLogado.replace(' (Você)', '');
+    const jaEstaNaLista = novaListaCuidadores.some(c => c.nome.replace(' (Você)', '') === nomeTratado);
+    
+    if (!jaEstaNaLista) {
+      const meuUsuario: Cuidador = { id: Date.now().toString(), nome: nomeTratado, funcao: fluxoAberto === 'criando' ? 'Dono(a) da Matilha' : minhaFuncao };
+      novaListaCuidadores = [meuUsuario, ...novaListaCuidadores];
+      setCuidadores(novaListaCuidadores);
+      await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(novaListaCuidadores));
+    }
+
     if (fluxoAberto === 'criando') {
-      const numeroAleatorio = Math.floor(1000 + Math.random() * 9000);
-      codigoFinal = `PET-${numeroAleatorio}`;
+      const codigoFinal = `PET-${Math.floor(1000 + Math.random() * 9000)}`;
       await AsyncStorage.setItem('@PetGuardian_CodigoMatilha', codigoFinal);
       setCodigoMatilhaAtiva(codigoFinal);
     } else {
@@ -135,127 +125,88 @@ export default function FamilyPetScreen({ navigation }: Props) {
     }
 
     await AsyncStorage.setItem('@PetGuardian_MatilhaAtiva', 'sim');
-    setTemMatilha(true);
-    setFluxoAberto('nenhum');
-    setMinhaFuncao('');
-    setCodigoConvite('');
-    setNomeMatilha('');
+    setTemMatilha(true); setFluxoAberto('nenhum'); setMinhaFuncao(''); setCodigoConvite(''); setNomeMatilha('');
   };
 
   const sairMatilha = async () => {
     const novaLista = cuidadores.filter(c => c.nome.replace(' (Você)', '') !== usuarioLogado);
     setCuidadores(novaLista);
-    await AsyncStorage.setItem(STORAGE_CUIDADORES, JSON.stringify(novaLista));
-
+    await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(novaLista));
     await AsyncStorage.removeItem('@PetGuardian_MatilhaAtiva');
     await AsyncStorage.removeItem('@PetGuardian_CodigoMatilha');
-
-    if (novaLista.length === 0) {
-      await AsyncStorage.removeItem(STORAGE_RECADOS);
-      setRecados([]);
-    }
-
+    if (novaLista.length === 0) { await AsyncStorage.removeItem(STORAGE_KEYS.RECADOS); setRecados([]); }
     setTemMatilha(false);
   };
 
   const removerCuidador = async (id: string) => {
     const novaLista = cuidadores.filter((c) => c.id !== id);
     setCuidadores(novaLista);
-    await AsyncStorage.setItem(STORAGE_CUIDADORES, JSON.stringify(novaLista));
+    await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(novaLista));
   };
 
   const salvarRecado = async () => {
     if (novoRecado.trim() === '') return; 
+    
+    // SOLUÇÃO DA DATA NOS RECADOS
+    const dataHj = new Date();
+    const horaStr = dataHj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const dataStr = dataHj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const dataHoraFormatada = `${dataStr} às ${horaStr}`;
 
-    const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     let novaLista = [...recados];
 
     if (editandoId !== null) {
-      novaLista = novaLista.map(r => 
-        r.id === editandoId ? { ...r, texto: novoRecado, hora: horaAtual + " (editado)" } : r
-      );
+      novaLista = novaLista.map(r => r.id === editandoId ? { ...r, texto: novoRecado, hora: dataHoraFormatada + " (editado)" } : r);
       setEditandoId(null); 
     } else {
-      const recadoCriado: Recado = {
-        id: Date.now().toString(),
-        texto: novoRecado,
-        hora: horaAtual,
-        autor: usuarioLogado
-      };
-      novaLista = [recadoCriado, ...recados]; 
+      novaLista = [{ id: Date.now().toString(), texto: novoRecado, hora: dataHoraFormatada, autor: usuarioLogado }, ...recados]; 
     }
-
-    setRecados(novaLista);
-    setNovoRecado(''); 
-    await AsyncStorage.setItem(STORAGE_RECADOS, JSON.stringify(novaLista));
+    setRecados(novaLista); setNovoRecado(''); await AsyncStorage.setItem(STORAGE_KEYS.RECADOS, JSON.stringify(novaLista));
   };
 
-  const prepararEdicao = (recado: Recado) => {
-    setNovoRecado(recado.texto);
-    setEditandoId(recado.id);
-  };
-
-  const removerRecado = async (id: string) => {
-    const novaLista = recados.filter(r => r.id !== id);
-    setRecados(novaLista);
-    await AsyncStorage.setItem(STORAGE_RECADOS, JSON.stringify(novaLista));
-  };
-
-  const getInitials = (name: string) => {
-    if (!name) return '??';
-    const cleanName = name.replace(' (Você)', '');
-    return cleanName.substring(0, 2).toUpperCase();
-  };
+  const prepararEdicao = (recado: Recado) => { setNovoRecado(recado.texto); setEditandoId(recado.id); };
+  const removerRecado = async (id: string) => { const novaLista = recados.filter(r => r.id !== id); setRecados(novaLista); await AsyncStorage.setItem(STORAGE_KEYS.RECADOS, JSON.stringify(novaLista)); };
+  const getInitials = (name: string) => { if (!name) return '??'; return name.replace(' (Você)', '').substring(0, 2).toUpperCase(); };
 
   if (!temMatilha) {
     return (
-      <View style={styles.mainContainer}>
-        <Header title='Family Pet' />
-        <View style={styles.choiceContainer}>
-          <Text style={styles.sectionTitleCenter}>Você ainda não faz parte de uma matilha!</Text>
-          <Text style={styles.subSectionTitleCenter}>Escolha uma opção para começar a cuidar do seu pet em grupo.</Text>
+      <View style={styles.container}>
+        <View style={{ paddingTop: Platform.OS === 'ios' ? 50 : 30, paddingHorizontal: 20 }}>
+            <Header title='Family Pet' />
+        </View>
+        
+        <View style={{ flex: 1, justifyContent: 'center', padding: 30, gap: 15 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', textAlign: 'center', marginBottom: 4 }}>Você ainda não faz parte de uma matilha!</Text>
+          <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>Escolha uma opção para começar a cuidar do seu pet em grupo.</Text>
 
-          <TouchableOpacity style={styles.addButton} onPress={() => setFluxoAberto('criando')}>
-            <Text style={styles.addButtonText}>Criar Nova Matilha</Text>
+          <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 15, alignItems: 'center' }} onPress={() => setFluxoAberto('criando')}>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Criar Nova Matilha</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.btnSecundario} onPress={() => setFluxoAberto('entrando')}>
-            <Text style={styles.btnSecundarioText}>Entrar com Código</Text>
+          <TouchableOpacity style={{ borderWidth: 2, borderColor: '#0066FF', paddingVertical: 18, borderRadius: 15, alignItems: 'center' }} onPress={() => setFluxoAberto('entrando')}>
+            <Text style={{ color: '#0066FF', fontWeight: 'bold', fontSize: 16 }}>Entrar com Código</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Substituição do Modal pelo View Condicional Absoluto */}
         {fluxoAberto !== 'nenhum' && (
-          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>
+          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 1000 }}>
+            <View style={{ width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10 }}>
+              <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 }}>
                 {fluxoAberto === 'criando' ? 'Nome da Matilha' : 'Entrar na Matilha'}
               </Text>
               
-              <TextInput 
-                style={styles.modalInput}
-                placeholder={fluxoAberto === 'criando' ? "Ex: Casa do Carlos" : "Código de Convite (Ex: PET-777)"}
-                placeholderTextColor="#999"
-                value={fluxoAberto === 'criando' ? nomeMatilha : codigoConvite}
-                onChangeText={fluxoAberto === 'criando' ? setNomeMatilha : setCodigoConvite}
-              />
+              <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' }} placeholder={fluxoAberto === 'criando' ? "Ex: Casa do Carlos" : "Código de Convite (Ex: PET-777)"} placeholderTextColor="#999" value={fluxoAberto === 'criando' ? nomeMatilha : codigoConvite} onChangeText={fluxoAberto === 'criando' ? setNomeMatilha : setCodigoConvite} />
 
               {fluxoAberto === 'entrando' && (
-                <TextInput 
-                  style={styles.modalInput}
-                  placeholder="Sua função (ex: Veterinário, Tio...)"
-                  placeholderTextColor="#999"
-                  value={minhaFuncao}
-                  onChangeText={setMinhaFuncao}
-                />
+                <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' }} placeholder="Sua função (ex: Veterinário, Tio...)" placeholderTextColor="#999" value={minhaFuncao} onChangeText={setMinhaFuncao} />
               )}
 
-              <TouchableOpacity style={styles.modalBtnSalvar} onPress={finalizarAcaoMatilha}>
-                <Text style={styles.modalBtnSalvarText}>Confirmar</Text>
+              <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 }} onPress={finalizarAcaoMatilha}>
+                <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Confirmar</Text>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={() => { setFluxoAberto('nenhum'); setMinhaFuncao(''); setCodigoConvite(''); setNomeMatilha(''); }}>
-                <Text style={styles.modalBtnCancelarText}>Voltar</Text>
+                <Text style={{ color: '#666', fontSize: 14, textAlign: 'center', textDecorationLine: 'underline' }}>Voltar</Text>
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
@@ -268,36 +219,52 @@ export default function FamilyPetScreen({ navigation }: Props) {
   const souDono = meuPerfil?.funcao === 'Dono(a) da Matilha';
 
   return (
-    <View style={styles.mainContainer}>
-      <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         
-        <Header title='Family Pet'/>
+        <View style={{ paddingTop: Platform.OS === 'ios' ? 30 : 10, paddingBottom: 10 }}>
+            {/* SOLUÇÃO NOME DA MATILHA MOSTRANDO NO TOPO! */}
+            <Header title={nomeDaMatilhaAtual}/>
+        </View>
 
-        <Text style={styles.sectionTitle}>Canto da Matilha</Text>
-        <Text style={styles.subSectionTitle}>Lista de Cuidadores</Text>
+        {/* SOLUÇÃO MOSTRANDO OS ANIMAIS DA MATILHA! */}
+        <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 10 }}>Nossos Animais</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 25 }}>
+          {petsDaMatilha.length === 0 ? (
+            <Text style={{ color: '#999', fontStyle: 'italic' }}>Nenhum pet cadastrado no Perfil ainda.</Text>
+          ) : (
+            petsDaMatilha.map(pet => (
+              <View key={pet.id} style={{ alignItems: 'center', marginRight: 15 }}>
+                <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#0066FF', overflow: 'hidden' }}>
+                   {AVATARES_DISPONIVEIS.find(a => a.id === pet.avatarId) ? (
+                      <Image source={AVATARES_DISPONIVEIS.find(a => a.id === pet.avatarId)?.imagem} style={{ width: '100%', height: '100%' }} />
+                   ) : (
+                      <MaterialCommunityIcons name="paw" size={30} color="#0066FF" />
+                   )}
+                </View>
+                <Text style={{ marginTop: 5, fontWeight: 'bold', color: '#333' }}>{pet.nome.split(' ')[0]}</Text>
+              </View>
+            ))
+          )}
+        </ScrollView>
+
+        <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 }}>Canto da Matilha</Text>
+        <Text style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>Lista de Cuidadores</Text>
 
         {cuidadores.map((c, index) => {
           const nomeLimpo = c.nome.replace(' (Você)', '');
           const isEuMesmo = nomeLimpo === usuarioLogado;
-          const isDono = c.funcao === 'Dono(a) da Matilha';
-          const nomeExibicao = isEuMesmo ? `${nomeLimpo} (Você)` : nomeLimpo;
-
           return (
-            <Animated.View 
-              key={c.id} 
-              entering={FadeInDown.delay(index * 100)}
-              style={[styles.card, styles.whiteShadow]}
-            >
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{getInitials(nomeLimpo)}</Text>
+            <Animated.View key={c.id} entering={FadeInDown.delay(index * 100)} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, marginBottom: 16, borderWidth: 1, borderColor: '#F0F0F0', backgroundColor: '#FFF', elevation: 2 }}>
+              <View style={{ width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: '#333', alignItems: 'center', justifyContent: 'center', marginRight: 15 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 15, color: '#333' }}>{getInitials(nomeLimpo)}</Text>
               </View>
-              <View style={styles.cardTextContainer}>
-                <Text style={styles.cardName}>{nomeExibicao}</Text>
-                <Text style={styles.cardRole}>{c.funcao}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#1A1A1A' }}>{isEuMesmo ? `${nomeLimpo} (Você)` : nomeLimpo}</Text>
+                <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>{c.funcao}</Text>
               </View>
-              
-              {souDono && !isEuMesmo && !isDono && (
-                <TouchableOpacity onPress={() => removerCuidador(c.id)} style={styles.btnAcao}>
+              {souDono && !isEuMesmo && c.funcao !== 'Dono(a) da Matilha' && (
+                <TouchableOpacity onPress={() => removerCuidador(c.id)} style={{ padding: 8 }}>
                   <Ionicons name="exit-outline" size={24} color="#FF3B30" />
                 </TouchableOpacity>
               )}
@@ -305,63 +272,39 @@ export default function FamilyPetScreen({ navigation }: Props) {
           );
         })}
 
-        <TouchableOpacity
-          style={[styles.addButton, styles.buttonShadow]}
-          onPress={() => setModalConviteVisivel(true)}
-        >
-          <Text style={styles.addButtonText}>+ Convidar Familiar</Text>
+        <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 15, alignItems: 'center', marginTop: 10, marginBottom: 35, elevation: 5 }} onPress={() => setCaixaConviteVisivel(true)}>
+          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>+ Convidar Familiar</Text>
         </TouchableOpacity>
 
-        <View style={[styles.recadosCard, styles.whiteShadow]}>
-          <Text style={styles.recadosTitle}>Mural da Matilha:</Text>
-          
-          <TextInput
-            style={styles.recadosInput}
-            placeholder="Digite aqui o que aconteceu..."
-            placeholderTextColor="#999"
-            value={novoRecado}
-            onChangeText={setNovoRecado}
-            multiline
-          />
-          
-          <TouchableOpacity 
-            style={styles.recadosButton} 
-            onPress={salvarRecado}
-          >
-            <Text style={styles.recadosButtonText}>
-              {editandoId ? 'Atualizar Recado' : 'Adicionar Recado'}
-            </Text>
+        <View style={{ padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#F0F0F0', backgroundColor: '#FFF', elevation: 2 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 15 }}>Mural da Matilha:</Text>
+          <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 12, marginBottom: 12, fontSize: 14, backgroundColor: '#FAFAFA', minHeight: 60, textAlignVertical: 'top' }} placeholder="Digite aqui o que aconteceu..." placeholderTextColor="#999" value={novoRecado} onChangeText={setNovoRecado} multiline />
+          <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 12, borderRadius: 12, alignItems: 'center', marginBottom: 10 }} onPress={salvarRecado}>
+            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 14 }}>{editandoId ? 'Atualizar Recado' : 'Adicionar Recado'}</Text>
           </TouchableOpacity>
-
           {editandoId && (
             <TouchableOpacity onPress={() => { setEditandoId(null); setNovoRecado(''); }}>
-              <Text style={styles.cancelarEdicaoText}>Cancelar Edição</Text>
+              <Text style={{ textAlign: 'center', color: '#666', marginBottom: 15, fontSize: 13, textDecorationLine: 'underline' }}>Cancelar Edição</Text>
             </TouchableOpacity>
           )}
 
-          <View style={styles.recadosList}>
+          <View style={{ marginTop: 10 }}>
             {recados.length === 0 ? (
-              <Text style={styles.recadosVazio}>Nenhum recado ainda hoje.</Text>
+              <Text style={{ fontSize: 14, color: '#999', fontStyle: 'italic', textAlign: 'center' }}>Nenhum recado ainda hoje.</Text>
             ) : (
               recados.map((recado) => (
-                <View key={recado.id} style={styles.recadoItem}>
-                  <View style={styles.recadoTextoContainer}>
-                    <Text style={styles.recadoAutor}>{recado.autor}</Text>
-                    <Text style={styles.recadoTexto}>{recado.texto}</Text>
-                    <Text style={styles.recadoHora}>{recado.hora}</Text>
+                <View key={recado.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' }}>
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#0066FF', marginBottom: 2 }}>{recado.autor}</Text>
+                    <Text style={{ fontSize: 14, color: '#333', lineHeight: 20 }}>{recado.texto}</Text>
+                    <Text style={{ fontSize: 11, color: '#999', marginTop: 4 }}>{recado.hora}</Text>
                   </View>
-                  
-                  <View style={styles.acoesRecado}>
+                  <View style={{ flexDirection: 'row', gap: 10, paddingTop: 4 }}>
                     {recado.autor === usuarioLogado && (
-                      <TouchableOpacity onPress={() => prepararEdicao(recado)} style={styles.btnAcao}>
-                         <Ionicons name="pencil" size={20} color="#666" />
-                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => prepararEdicao(recado)} style={{ padding: 8 }}><Ionicons name="pencil" size={20} color="#666" /></TouchableOpacity>
                     )}
-                    
                     {(recado.autor === usuarioLogado || souDono) && (
-                      <TouchableOpacity onPress={() => removerRecado(recado.id)} style={styles.btnAcao}>
-                         <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => removerRecado(recado.id)} style={{ padding: 8 }}><Ionicons name="trash-outline" size={20} color="#FF3B30" /></TouchableOpacity>
                     )}
                   </View>
                 </View>
@@ -371,27 +314,21 @@ export default function FamilyPetScreen({ navigation }: Props) {
         </View>
 
         <TouchableOpacity onPress={sairMatilha} style={{ marginTop: 30 }}>
-           <Text style={styles.sairMatilhaText}>Sair da Matilha (Simulação)</Text>
+           <Text style={{ textAlign: 'center', color: '#FF3B30', fontWeight: 'bold', fontSize: 14 }}>Sair da Matilha</Text>
         </TouchableOpacity>
 
       </ScrollView>
 
-      {/* Substituição do Modal pelo View Condicional Absoluto */}
-      {modalConviteVisivel && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Convite da Matilha</Text>
-            
-            <Text style={{ textAlign: 'center', marginBottom: 20, color: '#666' }}>
-              Compartilhe o código abaixo com seus familiares para eles entrarem no grupo!
-            </Text>
-
-            <View style={styles.codigoContainer}>
-              <Text style={styles.codigoText}>{codigoMatilhaAtiva}</Text>
+      {caixaConviteVisivel && (
+        <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 1000 }}>
+          <View style={{ width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10 }}>
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 }}>Convite da Matilha</Text>
+            <Text style={{ textAlign: 'center', marginBottom: 20, color: '#666' }}>Compartilhe o código abaixo com seus familiares!</Text>
+            <View style={{ backgroundColor: '#F0F8FF', padding: 20, borderRadius: 12, alignItems: 'center', marginBottom: 25, borderWidth: 1, borderColor: '#0066FF', borderStyle: 'dashed' }}>
+              <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0066FF', letterSpacing: 2 }}>{codigoMatilhaAtiva}</Text>
             </View>
-
-            <TouchableOpacity style={styles.modalBtnSalvar} onPress={() => setModalConviteVisivel(false)}>
-              <Text style={styles.modalBtnSalvarText}>Fechar</Text>
+            <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 }} onPress={() => setCaixaConviteVisivel(false)}>
+              <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Fechar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -402,65 +339,5 @@ export default function FamilyPetScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: '#FAFAFA' },
-  contentContainer: { padding: 24, paddingBottom: 40 },
-  choiceContainer: { flex: 1, justifyContent: 'center', padding: 30, gap: 15 },
-  whiteShadow: {
-    backgroundColor: '#FFF',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6 },
-      android: { elevation: 4 },
-    }),
-  },
-  buttonShadow: {
-    ...Platform.select({
-      ios: { shadowColor: '#0066FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
-      android: { elevation: 6 },
-    }),
-  },
-  
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
-  subSectionTitle: { fontSize: 14, color: '#666', marginBottom: 20 },
-  
-  sectionTitleCenter: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4, textAlign: 'center' },
-  subSectionTitleCenter: { fontSize: 14, color: '#666', marginBottom: 20, textAlign: 'center' },
-
-  card: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, marginBottom: 16, borderWidth: 1, borderColor: '#F0F0F0' },
-  avatar: { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: '#333', alignItems: 'center', justifyContent: 'center', marginRight: 15 },
-  avatarText: { fontWeight: 'bold', fontSize: 15, color: '#333' },
-  cardTextContainer: { flex: 1 },
-  cardName: { fontWeight: 'bold', fontSize: 16, color: '#1A1A1A' },
-  cardRole: { fontSize: 13, color: '#666', marginTop: 2 },
-  addButton: { backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 15, alignItems: 'center', marginTop: 10, marginBottom: 35 },
-  addButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  btnSecundario: { borderWidth: 2, borderColor: '#0066FF', paddingVertical: 18, borderRadius: 15, alignItems: 'center' },
-  btnSecundarioText: { color: '#0066FF', fontWeight: 'bold', fontSize: 16 },
-  recadosCard: { padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#F0F0F0' },
-  recadosTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 15 },
-  recadosInput: { borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 12, marginBottom: 12, fontSize: 14, backgroundColor: '#FAFAFA', minHeight: 60, textAlignVertical: 'top' },
-  recadosButton: { backgroundColor: '#0066FF', paddingVertical: 12, borderRadius: 12, alignItems: 'center', marginBottom: 10 },
-  recadosButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
-  cancelarEdicaoText: { textAlign: 'center', color: '#666', marginBottom: 15, fontSize: 13, textDecorationLine: 'underline' },
-  recadosList: { marginTop: 10 },
-  recadosVazio: { fontSize: 14, color: '#999', fontStyle: 'italic', textAlign: 'center' },
-  recadoItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' },
-  recadoTextoContainer: { flex: 1, paddingRight: 10 },
-  recadoAutor: { fontSize: 12, fontWeight: '700', color: '#0066FF', marginBottom: 2 },
-  recadoTexto: { fontSize: 14, color: '#333', lineHeight: 20 },
-  recadoHora: { fontSize: 11, color: '#999', marginTop: 4 },
-  acoesRecado: { flexDirection: 'row', gap: 10, paddingTop: 4 },
-  btnAcao: { padding: 8 },
-  
-  // A mágica de simular o Modal com View Absoluta
-  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 1000 },
-  modalContent: { width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 },
-  
-  modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 },
-  modalInput: { borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' },
-  modalBtnSalvar: { backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 },
-  modalBtnSalvarText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-  modalBtnCancelarText: { color: '#666', fontSize: 14, textAlign: 'center', textDecorationLine: 'underline' },
-  sairMatilhaText: { textAlign: 'center', color: '#FF3B30', fontWeight: 'bold', fontSize: 14 },
-  codigoContainer: { backgroundColor: '#F0F8FF', padding: 20, borderRadius: 12, alignItems: 'center', marginBottom: 25, borderWidth: 1, borderColor: '#0066FF', borderStyle: 'dashed' },
-  codigoText: { fontSize: 24, fontWeight: 'bold', color: '#0066FF', letterSpacing: 2 }
+  container: { flex: 1, backgroundColor: '#FAFAFA' }
 });

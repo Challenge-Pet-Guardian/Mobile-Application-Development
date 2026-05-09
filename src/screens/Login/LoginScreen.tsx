@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { STORAGE_USER_DATA } from '../../constants/Keys';
+import { STORAGE_KEYS } from '../../constants/Keys'; 
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -22,7 +22,6 @@ export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  // Estados para as mensagens de erro
   const [emailErro, setEmailErro] = useState('');
   const [senhaErro, setSenhaErro] = useState('');
 
@@ -33,7 +32,6 @@ export default function LoginScreen({ navigation }: Props) {
     let temErro = false;
     let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
 
-    // 1. Validação visual no momento do clique
     if (email.trim() === '') {
       setEmailErro('Por favor, insira o seu e-mail.');
       temErro = true;
@@ -51,14 +49,13 @@ export default function LoginScreen({ navigation }: Props) {
       return;
     }
 
-    // 2. Tenta fazer o login buscando no AsyncStorage
     try {
-      const userDataString = await AsyncStorage.getItem(STORAGE_USER_DATA);
+      
+      const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
       
       if (userDataString) {
         const userData = JSON.parse(userDataString);
         
-        // Compara se o que foi digitado bate com o que está salvo
         if (userData.email === email && userData.senha === senha) {
           navigation.navigate('Tabs'); 
         } else {
@@ -80,14 +77,12 @@ export default function LoginScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.contentWrapper}>
           
-          {/* Cabeçalho */}
           <View style={styles.headerContainer}>
             <Text style={{ fontSize: 40, marginBottom: 10 }}>🐾</Text>
             <Text style={styles.title}>PetGuardian</Text>
             <Text style={styles.subtitle}>Bem-vindo de volta!</Text>
           </View>
 
-          {/* Formulário num Card Branco */}
           <View style={styles.formContainer}>
             
             <Text style={styles.inputLabel}>E-mail</Text>
@@ -100,7 +95,7 @@ export default function LoginScreen({ navigation }: Props) {
               value={email}
               onChangeText={(texto) => {
                 setEmail(texto);
-                setEmailErro(''); // Limpa o erro ao digitar
+                setEmailErro(''); 
               }}
             />
             {emailErro !== '' && <Text style={styles.erroTexto}>{emailErro}</Text>}
@@ -114,7 +109,7 @@ export default function LoginScreen({ navigation }: Props) {
               value={senha}
               onChangeText={(texto) => {
                 setSenha(texto);
-                setSenhaErro(''); // Limpa o erro ao digitar
+                setSenhaErro(''); 
               }}
             />
             {senhaErro !== '' && <Text style={styles.erroTexto}>{senhaErro}</Text>}
