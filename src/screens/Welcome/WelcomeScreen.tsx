@@ -47,7 +47,7 @@ export default function WelcomeScreen({ navigation }: Props) {
 
       <View style={styles.content}>
         
-        {/* REQUISITO: Animação com Reanimated (ZoomIn) */}
+      
         <Animated.View
           entering={ZoomIn.duration(800)}
           style={styles.heroSection}

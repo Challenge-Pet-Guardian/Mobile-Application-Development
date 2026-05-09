@@ -11,6 +11,7 @@ interface StreakDay {
 
 interface StreakCardProps {
     streakDays: StreakDay[];
+    totalStreak: number; 
 }
 
 const renderIcon = (status: StreakDay['status']) => {
@@ -26,14 +27,16 @@ const renderIcon = (status: StreakDay['status']) => {
     }
 };
 
-export function StreakCard({ streakDays }: StreakCardProps) {
+export function StreakCard({ streakDays, totalStreak }: StreakCardProps) {
     return (
         <View style={styles.streakCard}>
             <View style={styles.streakHeader}>
                 <Text style={styles.sectionTitle}>Ofensiva da Semana</Text>
                 <View style={styles.totalStreakBadge}>
                     <MaterialCommunityIcons name="fire" size={18} color="#FF9600" />
-                    <Text style={styles.totalStreakText}>12 dias</Text>
+                    <Text style={styles.totalStreakText}>
+                        {totalStreak} {totalStreak === 1 ? 'dia' : 'dias'}
+                    </Text>
                 </View>
             </View>
 
