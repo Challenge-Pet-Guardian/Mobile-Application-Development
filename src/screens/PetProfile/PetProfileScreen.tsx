@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
-  TextInput, KeyboardAvoidingView, Platform, Image, Alert 
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput, KeyboardAvoidingView, Image, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Header } from '../../components/Header';
-import { STORAGE_KEYS } from '../../constants/Keys';
 
 const AVATARES_DISPONIVEIS = [
   { id: '1', imagem: require('../../assets/img/cachorro-01.jpg') }, 
@@ -26,6 +22,7 @@ interface Pet {
   sexo: string;
   castrado: string;
   ultimaVacina: string;
+  ultimaConsulta: string;
   veterinario: string;
   alergias: string;
   medicamentos: string;
@@ -43,6 +40,7 @@ export default function PetProfileScreen() {
   const [sexo, setSexo] = useState('');
   const [castrado, setCastrado] = useState('');
   const [ultimaVacina, setUltimaVacina] = useState('');
+  const [ultimaConsulta, setUltimaConsulta] = useState('');
   const [veterinario, setVeterinario] = useState('');
   const [alergias, setAlergias] = useState('');
   const [medicamentos, setMedicamentos] = useState('');
@@ -62,7 +60,7 @@ export default function PetProfileScreen() {
         }
       }
     } catch (error) {
-      console.log('Erro ao carregar dados:', error);
+      console.log(error);
     }
   };
 
@@ -76,6 +74,7 @@ export default function PetProfileScreen() {
     setSexo(pet.sexo);
     setCastrado(pet.castrado);
     setUltimaVacina(pet.ultimaVacina);
+    setUltimaConsulta(pet.ultimaConsulta || '');
     setVeterinario(pet.veterinario);
     setAlergias(pet.alergias);
     setMedicamentos(pet.medicamentos);
@@ -85,7 +84,7 @@ export default function PetProfileScreen() {
     setPetAtualId(null);
     setAvatarEscolhidoId('1');
     setNome(''); setRaca(''); setIdade(''); setPeso(''); setSexo('');
-    setCastrado(''); setUltimaVacina(''); setVeterinario('');
+    setCastrado(''); setUltimaVacina(''); setUltimaConsulta(''); setVeterinario('');
     setAlergias(''); setMedicamentos('');
   };
 
@@ -98,7 +97,7 @@ export default function PetProfileScreen() {
     const dadosDoFormulario: Pet = { 
       id: petAtualId || Date.now().toString(),
       avatarId: avatarEscolhidoId,
-      nome, raca, idade, peso, sexo, castrado, ultimaVacina,
+      nome, raca, idade, peso, sexo, castrado, ultimaVacina, ultimaConsulta,
       veterinario, alergias, medicamentos 
     };
 
@@ -118,18 +117,24 @@ export default function PetProfileScreen() {
     }
   };
 
-  // FUNÇÃO DE EXCLUIR COM CONFIRMAÇÃO
   const confirmarExclusao = () => {
     if (!petAtualId) return;
 
-    Alert.alert(
-      "Excluir Pet",
-      `Tem certeza que deseja remover o(a) ${nome} da sua lista?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Excluir", style: "destructive", onPress: excluirPet }
-      ]
-    );
+    if (Platform.OS === 'web') {
+      const confirmou = window.confirm(`Tem certeza que deseja remover o(a) ${nome} da sua lista?`);
+      if (confirmou) {
+        excluirPet();
+      }
+    } else {
+      Alert.alert(
+        "Excluir Pet",
+        `Tem certeza que deseja remover o(a) ${nome} da sua lista?`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Excluir", style: "destructive", onPress: excluirPet }
+        ]
+      );
+    }
   };
 
   const excluirPet = async () => {
@@ -143,7 +148,10 @@ export default function PetProfileScreen() {
       } else {
         prepararNovoPet();
       }
-      Alert.alert('Pronto', 'Pet removido com sucesso.');
+      
+      if (Platform.OS !== 'web') {
+        Alert.alert('Pronto', 'Pet removido com sucesso.');
+      }
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível excluir.');
     }
@@ -153,13 +161,12 @@ export default function PetProfileScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 150 }} showsVerticalScrollIndicator={false}>
         
         <View style={{ paddingHorizontal: 20, paddingTop: 10 }}>
           <Header title="Meus Pets" />
         </View>
 
-        {/* CARROSSEL DE PETS */}
         <View style={styles.carrosselContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.listaDePets}>
             {meusPets.map((pet) => (
@@ -179,7 +186,6 @@ export default function PetProfileScreen() {
           </ScrollView>
         </View>
 
-        {/* FORMULÁRIO */}
         <View style={styles.avatarSection}>
           <View style={styles.imageWrapper}>
             {avatarAtual ? <Image source={avatarAtual} style={styles.petImage} /> : <View style={styles.petImagePlaceholder}><MaterialCommunityIcons name="paw" size={40} color="#A0AEC0" /></View>}
@@ -228,12 +234,19 @@ export default function PetProfileScreen() {
             </View>
           </View>
 
-          {/* SEÇÃO DE SAÚDE (HISTÓRICO) */}
           <View style={styles.secaoSaude}>
             <Text style={styles.tituloSaude}>Histórico e Cuidados</Text>
             
-            <Text style={styles.inputLabel}>Veterinário de Confiança</Text>
-            <TextInput style={styles.input} value={veterinario} onChangeText={setVeterinario} placeholder="Nome ou telefone" />
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <Text style={styles.inputLabel}>Veterinário</Text>
+                <TextInput style={styles.input} value={veterinario} onChangeText={setVeterinario} placeholder="Nome/Tel" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.inputLabel}>Última Consulta</Text>
+                <TextInput style={styles.input} value={ultimaConsulta} onChangeText={setUltimaConsulta} placeholder="DD/MM/AAAA" />
+              </View>
+            </View>
 
             <Text style={styles.inputLabel}>Alergias ou Restrições</Text>
             <TextInput style={styles.input} value={alergias} onChangeText={setAlergias} placeholder="Ex: Alergia a picada de pulga..." />
@@ -246,7 +259,6 @@ export default function PetProfileScreen() {
             <Text style={styles.btnSalvarText}>{petAtualId ? 'Atualizar Informações' : 'Cadastrar Pet'}</Text>
           </TouchableOpacity>
 
-          {/* BOTÃO DE EXCLUIR (Só aparece se estiver editando um pet existente) */}
           {petAtualId && (
             <TouchableOpacity style={styles.btnExcluir} onPress={confirmarExclusao}>
               <MaterialCommunityIcons name="trash-can-outline" size={20} color="#FF3B30" />

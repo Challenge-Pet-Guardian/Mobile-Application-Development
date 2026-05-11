@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, 
-  TextInput, KeyboardAvoidingView, Alert 
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput, KeyboardAvoidingView, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { STORAGE_KEYS } from '../../constants/Keys';
@@ -13,11 +10,19 @@ export default function UserProfileScreen({ navigation }: any) {
   const [emMatilha, setEmMatilha] = useState(false);
   const [xp, setXp] = useState(0); 
   const [streak, setStreak] = useState(0); 
+  const [meuRank, setMeuRank] = useState('---');
 
   const [janelaAberta, setJanelaAberta] = useState<'nenhum' | 'editar' | 'faq' | 'contato'>('nenhum');
   const [editNome, setEditNome] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editSenha, setEditSenha] = useState('');
+  const [confirmarEditSenha, setConfirmarEditSenha] = useState('');
+  
+  const [nomeErro, setNomeErro] = useState('');
+  const [emailErro, setEmailErro] = useState('');
+  const [senhaErro, setSenhaErro] = useState('');
+  const [confirmarSenhaErro, setConfirmarSenhaErro] = useState('');
+
   const [msgContato, setMsgContato] = useState('');
 
   useEffect(() => {
@@ -29,24 +34,53 @@ export default function UserProfileScreen({ navigation }: any) {
 
   const carregarUsuario = async () => {
     try {
+      let nomeUsuario = 'Usuário';
       const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
+      
       if (userDataString) {
         const userData = JSON.parse(userDataString);
-        setNome(userData.nome || 'Usuário');
+        nomeUsuario = userData.nome || 'Usuário';
+        setNome(nomeUsuario);
         setEmail(userData.email || '');
         setEditNome(userData.nome || '');
         setEditEmail(userData.email || '');
         setEditSenha(userData.senha || '');
+        setConfirmarEditSenha(userData.senha || '');
       }
 
       const matilhaAtiva = await AsyncStorage.getItem('@PetGuardian_MatilhaAtiva');
       setEmMatilha(matilhaAtiva === 'sim');
 
-      const xpSalvo = await AsyncStorage.getItem('@PetGuardian_PontosXP');
-      if (xpSalvo) setXp(Number(xpSalvo));
-
       const ofensivaSalva = await AsyncStorage.getItem('@PetGuardian_OfensivaDias');
       if (ofensivaSalva) setStreak(Number(ofensivaSalva));
+
+      const cuidadoresString = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
+      if (cuidadoresString && matilhaAtiva === 'sim') {
+        const listaCuidadores = JSON.parse(cuidadoresString);
+        
+        const meuPerfil = listaCuidadores.find((c: any) => c.nome.replace(' (Você)', '').trim() === nomeUsuario.trim());
+        if (meuPerfil) {
+          setXp(meuPerfil.xp || 0); 
+        }
+
+        const listaOrdenada = [...listaCuidadores].sort((a: any, b: any) => {
+            const xpA = a.xp || 0;
+            const xpB = b.xp || 0;
+            if (xpB !== xpA) return xpB - xpA;
+            return Number(a.id) - Number(b.id);
+        });
+        
+        const posicao = listaOrdenada.findIndex((c: any) => c.nome.replace(' (Você)', '').trim() === nomeUsuario.trim());
+        
+        if (posicao !== -1) {
+          setMeuRank(`${posicao + 1}º`);
+        } else {
+          setMeuRank('---');
+        }
+      } else {
+        setMeuRank('---');
+        setXp(0);
+      }
 
     } catch (error) {
       console.log(error);
@@ -63,8 +97,44 @@ export default function UserProfileScreen({ navigation }: any) {
   };
 
   const salvarEdicao = async () => {
-    if (!editNome || !editEmail || !editSenha) {
-      Alert.alert('Aviso', 'Por favor, preencha o nome, e-mail e senha.');
+    setNomeErro('');
+    setEmailErro('');
+    setSenhaErro('');
+    setConfirmarSenhaErro('');
+
+    let temErro = false;
+    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
+
+    if (editNome.trim() === '') {
+      setNomeErro('O nome é obrigatório!');
+      temErro = true;
+    }
+
+    if (editEmail.trim() === '') {
+      setEmailErro('O e-mail é obrigatório!');
+      temErro = true;
+    } else if (reg.test(editEmail) === false) {
+      setEmailErro('O e-mail está com formato errado!');
+      temErro = true;
+    }
+
+    if (editSenha.trim() === '') {
+      setSenhaErro('A senha é obrigatória!');
+      temErro = true;
+    } else if (editSenha.length < 8) {
+      setSenhaErro('A senha deve ter no mínimo 8 dígitos!');
+      temErro = true;
+    }
+
+    if (confirmarEditSenha.trim() === '') {
+      setConfirmarSenhaErro('Confirme sua senha!');
+      temErro = true;
+    } else if (editSenha !== confirmarEditSenha) {
+      setConfirmarSenhaErro('As senhas não coincidem!');
+      temErro = true;
+    }
+
+    if (temErro) {
       return;
     }
     
@@ -121,12 +191,10 @@ export default function UserProfileScreen({ navigation }: any) {
       <View style={[styles.statIconCircle, { backgroundColor: color + '20' }]}>
         <MaterialCommunityIcons name={icon} size={24} color={color} />
       </View>
-      <Text style={[styles.statValue, { color: color === '#A0AEC0' ? '#A0AEC0' : '#1A202C' }]}>{value}</Text>
+      <Text style={[styles.statValue, { color: color === '#A0AEC0' ? '#A0AEC0' : '#1A202C' }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
-
-  const nivelAtual = Math.floor(xp / 100) + 1;
 
   return (
     <View style={styles.container}>
@@ -145,8 +213,8 @@ export default function UserProfileScreen({ navigation }: any) {
 
         <View style={styles.statsRow}>
           <StatCard icon="fire" label="Ofensiva" value={emMatilha ? `${streak} dias` : '0 dias'} color={emMatilha ? "#FF9600" : "#A0AEC0"} />
-          <StatCard icon="star" label="XP Total" value={emMatilha ? xp : '0'} color={emMatilha ? "#1CB0F6" : "#A0AEC0"} />
-          <StatCard icon="star-shooting" label="Nível" value={emMatilha ? `Lvl ${nivelAtual}` : "---"} color={emMatilha ? "#58CC02" : "#A0AEC0"} />
+          <StatCard icon="star" label="Meu XP" value={emMatilha ? xp : '0'} color={emMatilha ? "#1CB0F6" : "#A0AEC0"} />
+          <StatCard icon="medal" label="Ranking" value={emMatilha ? meuRank : "---"} color={emMatilha ? "#58CC02" : "#A0AEC0"} />
         </View>
 
         {!emMatilha && (
@@ -182,19 +250,32 @@ export default function UserProfileScreen({ navigation }: any) {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Gerenciar Perfil</Text>
-              <TouchableOpacity onPress={() => setJanelaAberta('nenhum')} style={styles.closeBtn}>
+              <TouchableOpacity onPress={() => { setJanelaAberta('nenhum'); setNomeErro(''); setEmailErro(''); setSenhaErro(''); setConfirmarSenhaErro(''); }} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color="#718096" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.inputLabel}>Nome Completo</Text>
-            <TextInput style={styles.modalInput} value={editNome} onChangeText={setEditNome} />
-            <Text style={styles.inputLabel}>E-mail</Text>
-            <TextInput style={styles.modalInput} value={editEmail} onChangeText={setEditEmail} keyboardType="email-address" autoCapitalize="none" />
-            <Text style={styles.inputLabel}>Confirmar Senha</Text>
-            <TextInput style={styles.modalInput} value={editSenha} onChangeText={setEditSenha} secureTextEntry />
-            <TouchableOpacity style={styles.modalBtnSalvar} onPress={salvarEdicao}>
-              <Text style={styles.modalBtnSalvarText}>Salvar Alterações</Text>
-            </TouchableOpacity>
+            
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.inputLabel}>Nome Completo</Text>
+              <TextInput style={[styles.modalInput, nomeErro !== '' ? styles.inputErro : null]} value={editNome} onChangeText={(t) => { setEditNome(t); setNomeErro(''); }} />
+              {nomeErro !== '' && <Text style={styles.erroTexto}>{nomeErro}</Text>}
+
+              <Text style={styles.inputLabel}>E-mail</Text>
+              <TextInput style={[styles.modalInput, emailErro !== '' ? styles.inputErro : null]} value={editEmail} onChangeText={(t) => { setEditEmail(t); setEmailErro(''); }} keyboardType="email-address" autoCapitalize="none" />
+              {emailErro !== '' && <Text style={styles.erroTexto}>{emailErro}</Text>}
+
+              <Text style={styles.inputLabel}>Senha</Text>
+              <TextInput style={[styles.modalInput, senhaErro !== '' ? styles.inputErro : null]} value={editSenha} onChangeText={(t) => { setEditSenha(t); setSenhaErro(''); }} secureTextEntry />
+              {senhaErro !== '' && <Text style={styles.erroTexto}>{senhaErro}</Text>}
+
+              <Text style={styles.inputLabel}>Confirmar Senha</Text>
+              <TextInput style={[styles.modalInput, confirmarSenhaErro !== '' ? styles.inputErro : null]} value={confirmarEditSenha} onChangeText={(t) => { setConfirmarEditSenha(t); setConfirmarSenhaErro(''); }} secureTextEntry />
+              {confirmarSenhaErro !== '' && <Text style={styles.erroTexto}>{confirmarSenhaErro}</Text>}
+
+              <TouchableOpacity style={styles.modalBtnSalvar} onPress={salvarEdicao}>
+                <Text style={styles.modalBtnSalvarText}>Salvar Alterações</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       )}
@@ -236,16 +317,18 @@ export default function UserProfileScreen({ navigation }: any) {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Suporte Técnico</Text>
-              <TouchableOpacity onPress={() => setJanelaAberta('nenhum')} style={styles.closeBtn}>
+              <TouchableOpacity onPress={() => { setJanelaAberta('nenhum'); setMsgContato(''); }} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color="#718096" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.contatoDesc}>Encontrou um problema? Envie sua mensagem para nossa equipe de desenvolvimento.</Text>
-            <TextInput style={[styles.modalInput, { height: 140, textAlignVertical: 'top' }]} placeholder="Descreva aqui o que precisa..." placeholderTextColor="#A0AEC0" value={msgContato} onChangeText={setMsgContato} multiline />
-            <TouchableOpacity style={styles.modalBtnSalvar} onPress={enviarContato}>
-              <Ionicons name="paper-plane-outline" size={20} color="#FFF" style={{marginRight: 8}} />
-              <Text style={styles.modalBtnSalvarText}>Enviar Feedback</Text>
-            </TouchableOpacity>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.contatoDesc}>Encontrou um problema? Envie sua mensagem para nossa equipe de desenvolvimento.</Text>
+              <TextInput style={[styles.modalInput, { height: 160, textAlignVertical: 'top', paddingTop: 16 }]} placeholder="Descreva aqui o que precisa..." placeholderTextColor="#A0AEC0" value={msgContato} onChangeText={setMsgContato} multiline />
+              <TouchableOpacity style={styles.modalBtnSalvar} onPress={enviarContato}>
+                <Ionicons name="paper-plane-outline" size={20} color="#FFF" style={{marginRight: 8}} />
+                <Text style={styles.modalBtnSalvarText}>Enviar Feedback</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       )}
@@ -275,12 +358,14 @@ const styles = StyleSheet.create({
   menuIconWrapper: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#EBF4FF', justifyContent: 'center', alignItems: 'center' },
   menuText: { flex: 1, marginLeft: 15, fontSize: 16, color: '#2D3748', fontWeight: '600' },
   modalOverlay: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(10, 22, 40, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 1000 },
-  modalContent: { width: '100%', backgroundColor: '#FFF', borderRadius: 24, padding: 24, elevation: 10 },
+  modalContent: { width: '100%', backgroundColor: '#FFF', borderRadius: 24, padding: 24, elevation: 10, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
   modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#1A202C' },
   closeBtn: { padding: 4, backgroundColor: '#F7FAFC', borderRadius: 20 },
   inputLabel: { fontSize: 14, fontWeight: '700', color: '#4A5568', marginBottom: 8, marginLeft: 4 },
   modalInput: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 14, padding: 16, marginBottom: 18, fontSize: 16, color: '#2D3748' },
+  inputErro: { borderColor: '#E53E3E', borderWidth: 1.5, backgroundColor: '#FFF5F5' },
+  erroTexto: { color: '#E53E3E', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 8, fontWeight: '500' },
   modalBtnSalvar: { backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginTop: 5, flexDirection: 'row', justifyContent: 'center' },
   modalBtnSalvarText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
   faqCard: { backgroundColor: '#F8FAFC', padding: 20, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#EDF2F7' },

@@ -7,8 +7,9 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { Header } from "../../components/Header";
 import { StreakCard } from "../../components/streakCard"; 
+import { STORAGE_KEYS } from '../../constants/Keys';
 
-interface Pet { id?: string; nome: string; breed?: string; age?: string; avatarId?: string; uri?: string; peso?: string; ultimaVacina?: string; vacina?: string; dataVacina?: string;}
+interface Pet { id?: string; nome: string; breed?: string; age?: string; avatarId?: string; uri?: string; peso?: string; ultimaVacina?: string; ultimaConsulta?: string; vacina?: string; dataVacina?: string;}
 interface Tarefa { id: number; titulo: string; horario: string; concluida: boolean; xp: number; }
 interface DiaOfensiva { id: number; dayLabel: string; dayNumber: string; status: 'feito' | 'perdido' | 'hoje' | 'futuro'; }
 
@@ -26,8 +27,10 @@ const TAREFAS_BASE: Tarefa[] = [
     { id: 3, titulo: "Escovar os pelos", horario: "20:00", concluida: false, xp: 15 },
 ];
 
-export default function Home() {
+export default function Home({ navigation }: any) {
     const [loading, setLoading] = useState(true);
+    const [temMatilha, setTemMatilha] = useState(false);
+    
     const [xpTotal, setXpTotal] = useState(0);
     const [ofensivaTotal, setOfensivaTotal] = useState(0); 
     const [householdName, setHouseholdName] = useState('Minha Matilha'); 
@@ -49,6 +52,15 @@ export default function Home() {
         try {
             setLoading(true);
 
+            const matilhaAtiva = await AsyncStorage.getItem('@PetGuardian_MatilhaAtiva');
+            if (matilhaAtiva !== 'sim') {
+                setTemMatilha(false);
+                setLoading(false);
+                return;
+            }
+
+            setTemMatilha(true);
+
             const nomeCasaSalvo = await AsyncStorage.getItem('@PetGuardian_NomeMatilha');
             if (nomeCasaSalvo) setHouseholdName(nomeCasaSalvo);
 
@@ -56,20 +68,17 @@ export default function Home() {
             let matilhaArray: Pet[] = [];
             if (matilhaStr) matilhaArray = JSON.parse(matilhaStr);
 
-            if (matilhaArray.length === 0) {
-                const petUnicoStr = await AsyncStorage.getItem('@PetGuardian_DadosPet');
-                if (petUnicoStr) matilhaArray = [JSON.parse(petUnicoStr)];
-            }
+            setPetsDaMatilha(matilhaArray);
 
             if (matilhaArray.length > 0) {
-                setPetsDaMatilha(matilhaArray);
                 setNomePetPrincipal(matilhaArray[0].nome || 'Pets');
+            } else {
+                setNomePetPrincipal('Pets');
             }
 
             const pontosSalvos = await AsyncStorage.getItem('@PetGuardian_PontosXP');
             if (pontosSalvos) setXpTotal(Number(pontosSalvos));
 
-    
             const ofensivaSalva = await AsyncStorage.getItem('@PetGuardian_OfensivaDias');
             if (ofensivaSalva) setOfensivaTotal(Number(ofensivaSalva));
 
@@ -91,7 +100,7 @@ export default function Home() {
             }
 
         } catch (error) {
-            console.log('Erro ao carregar dados na Home:', error);
+            console.log(error);
         } finally {
             setLoading(false);
         }
@@ -119,11 +128,34 @@ export default function Home() {
             await AsyncStorage.setItem('@PetGuardian_OfensivaDias', String(ofensivaAtual));
             await AsyncStorage.setItem('@PetGuardian_DataUltimaOfensiva', hoje);
             
-            // Atualiza o valor na tela na hora!
             setOfensivaTotal(ofensivaAtual);
 
         } catch (e) {
-            console.log("Erro ao atualizar ofensiva", e);
+            console.log(e);
+        }
+    };
+
+    const registrarXPIndividual = async (pontos: number) => {
+        try {
+            const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
+            if (!userDataString) return;
+            const userData = JSON.parse(userDataString);
+            const meuNome = userData.nome.trim();
+
+            const cuidadoresString = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
+            if (cuidadoresString) {
+                let listaCuidadores = JSON.parse(cuidadoresString);
+                listaCuidadores = listaCuidadores.map((c: any) => {
+                    const nomeNaLista = c.nome.replace(' (Você)', '').trim();
+                    if (nomeNaLista === meuNome) {
+                        return { ...c, xp: (c.xp || 0) + pontos };
+                    }
+                    return c;
+                });
+                await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(listaCuidadores));
+            }
+        } catch (e) {
+            console.log(e);
         }
     };
 
@@ -170,6 +202,7 @@ export default function Home() {
         await AsyncStorage.setItem('@PetGuardian_TarefasHoje', JSON.stringify(novasTarefas));
 
         if (isConcluindo) atualizarOfensivaReal(); 
+        await registrarXPIndividual(mudancaXP);
     };
 
     const handleMainTaskXPClick = async () => {
@@ -184,9 +217,15 @@ export default function Home() {
             await AsyncStorage.setItem('@PetGuardian_TarefaVermifugoAtiva', 'true');
             
             atualizarOfensivaReal(); 
-            Alert.alert('Excelente!', '+50 XP ganhos pela matilha! 🐾');
+            await registrarXPIndividual(50);
+
+            if (Platform.OS !== 'web') {
+              Alert.alert('Excelente!', '+50 XP ganhos pela matilha! 🐾');
+            } else {
+              window.alert('Excelente! +50 XP ganhos pela matilha! 🐾');
+            }
         } catch (error) {
-            console.log('Erro ao guardar XP:', error);
+            console.log(error);
         }
     };
 
@@ -197,6 +236,54 @@ export default function Home() {
     };
 
     if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#1CB0F6" /></View>;
+
+    if (!temMatilha) {
+        return (
+            <View style={styles.container}>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                    <Header title="Home" />
+                    <View style={styles.emptyStateContainer}>
+                        <MaterialCommunityIcons name="home-group" size={80} color="#1CB0F6" />
+                        <Text style={styles.emptyStateTitle}>Bem-vindo ao PetGuardian!</Text>
+                        <Text style={styles.emptyStateText}>
+                            Para ver as tarefas do dia, ganhar XP e acompanhar a saúde do seu pet, você precisa fazer parte de uma matilha.
+                        </Text>
+                        <TouchableOpacity 
+                            style={styles.emptyStateButton}
+                            onPress={() => navigation.navigate('Family')}
+                        >
+                            <Text style={styles.emptyStateButtonText}>Criar ou Entrar numa Matilha</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+                <StatusBar style="dark" />
+            </View>
+        );
+    }
+
+    if (temMatilha && petsDaMatilha.length === 0) {
+        return (
+            <View style={styles.container}>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                    <Header title="Home" />
+                    <View style={styles.emptyStateContainer}>
+                        <MaterialCommunityIcons name="dog" size={80} color="#FF9600" />
+                        <Text style={styles.emptyStateTitle}>Matilha Pronta!</Text>
+                        <Text style={styles.emptyStateText}>
+                            Sua matilha "{householdName}" está criada. Agora, cadastre o seu primeiro pet para liberar o painel de tarefas e histórico clínico!
+                        </Text>
+                        <TouchableOpacity 
+                            style={[styles.emptyStateButton, { backgroundColor: '#FF9600' }]}
+                            onPress={() => navigation.navigate('MeuPet')}
+                        >
+                            <Text style={styles.emptyStateButtonText}>Cadastrar meu Pet</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+                <StatusBar style="dark" />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -227,7 +314,6 @@ export default function Home() {
                     </View>
                 </View>
 
-               
                 <StreakCard streakDays={diasOfensiva} totalStreak={ofensivaTotal} />
 
                 <View style={styles.highlightCard}>
@@ -273,18 +359,22 @@ export default function Home() {
 
                 <View style={styles.healthCard}>
                     <Text style={[styles.sectionTitle, { marginBottom: 20 }]}>Histórico Clínico</Text>
-                    {petsDaMatilha.map((pet, index) => (
-                        <View key={index} style={{ marginBottom: 15, borderBottomWidth: index === petsDaMatilha.length - 1 ? 0 : 1, borderBottomColor: '#F0F0F0', paddingBottom: index === petsDaMatilha.length - 1 ? 0 : 15 }}>
-                            <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#333', marginBottom: 10 }}>{pet.nome}</Text>
-                            <View style={styles.healthRow}>
-                                <View style={styles.healthItem}><MaterialCommunityIcons name="weight" size={24} color="#1CB0F6" /><Text style={styles.healthValue}>{pet.peso || '-- kg'}</Text><Text style={styles.healthLabel}>Peso</Text></View>
-                                <View style={styles.healthDivider} />
-                                <View style={styles.healthItem}><MaterialCommunityIcons name="needle" size={24} color="#FF9600" /><Text style={styles.healthValue}>{pet.ultimaVacina || '--/--'}</Text><Text style={styles.healthLabel}>Vacina</Text></View>
-                                <View style={styles.healthDivider} />
-                                <View style={styles.healthItem}><FontAwesome5 name="stethoscope" size={20} color="#58CC02" /><Text style={styles.healthValue}>--/--</Text><Text style={styles.healthLabel}>Consulta</Text></View>
+                    {petsDaMatilha.length > 0 ? (
+                        petsDaMatilha.map((pet, index) => (
+                            <View key={index} style={{ marginBottom: 15, borderBottomWidth: index === petsDaMatilha.length - 1 ? 0 : 1, borderBottomColor: '#F0F0F0', paddingBottom: index === petsDaMatilha.length - 1 ? 0 : 15 }}>
+                                <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#333', marginBottom: 10 }}>{pet.nome}</Text>
+                                <View style={styles.healthRow}>
+                                    <View style={styles.healthItem}><MaterialCommunityIcons name="weight" size={24} color="#1CB0F6" /><Text style={styles.healthValue}>{pet.peso || '-- kg'}</Text><Text style={styles.healthLabel}>Peso</Text></View>
+                                    <View style={styles.healthDivider} />
+                                    <View style={styles.healthItem}><MaterialCommunityIcons name="needle" size={24} color="#FF9600" /><Text style={styles.healthValue}>{pet.ultimaVacina || '--/--'}</Text><Text style={styles.healthLabel}>Vacina</Text></View>
+                                    <View style={styles.healthDivider} />
+                                    <View style={styles.healthItem}><FontAwesome5 name="stethoscope" size={20} color="#58CC02" /><Text style={styles.healthValue}>{pet.ultimaConsulta || '--/--'}</Text><Text style={styles.healthLabel}>Consulta</Text></View>
+                                </View>
                             </View>
-                        </View>
-                    ))}
+                        ))
+                    ) : (
+                        <Text style={{ textAlign: 'center', color: '#999', marginBottom: 10 }}>Nenhum pet cadastrado para exibir o histórico.</Text>
+                    )}
                 </View>
                 <View style={{ height: 130 }} />
             </ScrollView>
@@ -337,4 +427,10 @@ const styles = StyleSheet.create({
     healthValue: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginTop: 8 },
     healthLabel: { fontSize: 12, color: '#64748B', marginTop: 4 },
     healthDivider: { width: 1, height: 40, backgroundColor: '#E2E8F0' },
+    
+    emptyStateContainer: { backgroundColor: '#FFF', borderRadius: 24, padding: 30, alignItems: 'center', elevation: 2, marginTop: 40, borderWidth: 1, borderColor: '#EDF2F7' },
+    emptyStateTitle: { fontSize: 22, fontWeight: 'bold', color: '#1A202C', marginTop: 20, textAlign: 'center' },
+    emptyStateText: { fontSize: 15, color: '#718096', textAlign: 'center', marginTop: 12, marginBottom: 30, lineHeight: 22 },
+    emptyStateButton: { backgroundColor: '#0066FF', width: '100%', paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
+    emptyStateButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 }
 });

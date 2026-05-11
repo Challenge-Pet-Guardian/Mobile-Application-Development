@@ -12,15 +12,18 @@ export default function RegisterScreen({ navigation }: Props) {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
 
   const [nomeErro, setNomeErro] = useState('');
   const [emailErro, setEmailErro] = useState('');
   const [senhaErro, setSenhaErro] = useState('');
+  const [confirmarSenhaErro, setConfirmarSenhaErro] = useState('');
 
   const handleRegister = async () => {
     setNomeErro('');
     setEmailErro('');
     setSenhaErro('');
+    setConfirmarSenhaErro('');
 
     let temErro = false;
     let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
@@ -46,19 +49,38 @@ export default function RegisterScreen({ navigation }: Props) {
       temErro = true;
     }
 
+    if (confirmarSenha.trim() === '') {
+      setConfirmarSenhaErro('Confirme sua senha!');
+      temErro = true;
+    } else if (senha !== confirmarSenha) {
+      setConfirmarSenhaErro('As senhas não coincidem!');
+      temErro = true;
+    }
+
     if (temErro) {
       return;
     }
 
     try {
+      await AsyncStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      await AsyncStorage.removeItem('@PetGuardian_MatilhaAtiva');
+
       const userData = { nome, email, senha };
-     
+      
       await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
       
-      Alert.alert('Sucesso!', 'A sua conta foi criada. Faça login para entrar na matilha.');
+      if (Platform.OS === 'web') {
+        window.alert('Conta criada! Faça o login para entrar na matilha.');
+      } else {
+        Alert.alert('Sucesso!', 'Conta criada! Faça o login para entrar na matilha.');
+      }
       navigation.goBack();
     } catch (e) {
-      Alert.alert('Erro', 'Não foi possível criar a conta.');
+      if (Platform.OS === 'web') {
+        window.alert('Não foi possível criar a conta.');
+      } else {
+        Alert.alert('Erro', 'Não foi possível criar a conta.');
+      }
     }
   };
 
@@ -106,6 +128,17 @@ export default function RegisterScreen({ navigation }: Props) {
               onChangeText={(texto) => { setSenha(texto); setSenhaErro(''); }}
             />
             {senhaErro !== '' && <Text style={styles.erroTexto}>{senhaErro}</Text>}
+
+            <Text style={styles.inputLabel}>Confirmar Senha</Text>
+            <TextInput
+              style={[styles.input, confirmarSenhaErro !== '' ? styles.inputErro : null]}
+              placeholder="Digite a senha novamente"
+              placeholderTextColor="#A0AEC0"
+              secureTextEntry
+              value={confirmarSenha}
+              onChangeText={(texto) => { setConfirmarSenha(texto); setConfirmarSenhaErro(''); }}
+            />
+            {confirmarSenhaErro !== '' && <Text style={styles.erroTexto}>{confirmarSenhaErro}</Text>}
 
             <TouchableOpacity style={[styles.button, styles.buttonShadow]} onPress={handleRegister}>
               <Text style={styles.buttonText}>Cadastrar</Text>
