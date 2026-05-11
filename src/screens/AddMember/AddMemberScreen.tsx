@@ -52,7 +52,7 @@ export default function AddMemberScreen({ navigation }: Props) {
           <View style={styles.previewContainer}>
             <Text style={styles.previewText}>
               👀 Pré-visualização:{'\n'} 
-              <Text style={{fontWeight: 'bold'}}>{nome ? nome : '???'}</Text> será adicionado(a) como <Text style={{fontWeight: 'bold'}}>{funcao ? funcao : '???'}</Text> da matilha!
+              <Text style={{fontWeight: 'bold'}}>{nome ? nome : '???'}</Text> será adicionado(a) como <Text style={{fontWeight: 'bold'}}>{funcao ? funcao : '???'}</Text> da família!
             </Text>
           </View>
         )}

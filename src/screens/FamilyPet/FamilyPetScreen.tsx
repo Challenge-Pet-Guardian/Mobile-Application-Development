@@ -98,8 +98,8 @@ export default function FamilyPetScreen({ navigation }: Props) {
     if (fluxoAberto === 'entrando') {
       const codigoRealDaMatilha = await AsyncStorage.getItem('@PetGuardian_CodigoMatilha');
       if (codigoConvite.toUpperCase() !== codigoRealDaMatilha) {
-        if (Platform.OS === 'web') window.alert('Código Inválido 🚫\nNão encontramos nenhuma matilha com esse código.');
-        else Alert.alert('Código Inválido 🚫', 'Não encontramos nenhuma matilha com esse código.');
+        if (Platform.OS === 'web') window.alert('Código Inválido 🚫\nNão encontramos nenhuma família com esse código.');
+        else Alert.alert('Código Inválido 🚫', 'Não encontramos nenhuma família com esse código.');
         return; 
       }
     }
@@ -110,8 +110,8 @@ export default function FamilyPetScreen({ navigation }: Props) {
     const jaEstaNaLista = novaListaCuidadores.some(c => c.nome.replace(' (Você)', '').trim() === nomeTratado);
     
     if (jaEstaNaLista && fluxoAberto === 'entrando') {
-        if (Platform.OS === 'web') window.alert('Você já faz parte desta matilha!');
-        else Alert.alert('Aviso', 'Você já faz parte desta matilha!');
+        if (Platform.OS === 'web') window.alert('Você já faz parte desta família!');
+        else Alert.alert('Aviso', 'Você já faz parte desta família!');
         setFluxoAberto('nenhum');
         setMinhaFuncao('');
         setCodigoConvite('');
@@ -127,7 +127,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
     }
     
     if (!jaEstaNaLista) {
-      const meuUsuario: Cuidador = { id: Date.now().toString(), nome: nomeTratado, funcao: fluxoAberto === 'criando' ? 'Dono(a) da Matilha' : minhaFuncao };
+      const meuUsuario: Cuidador = { id: Date.now().toString(), nome: nomeTratado, funcao: fluxoAberto === 'criando' ? 'Dono(a) da Família' : minhaFuncao };
       novaListaCuidadores = [meuUsuario, ...novaListaCuidadores];
       setCuidadores(novaListaCuidadores);
       await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(novaListaCuidadores));
@@ -199,11 +199,11 @@ export default function FamilyPetScreen({ navigation }: Props) {
         </View>
         
         <View style={{ flex: 1, justifyContent: 'center', padding: 30, gap: 15 }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', textAlign: 'center', marginBottom: 4 }}>Você ainda não faz parte de uma matilha!</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', textAlign: 'center', marginBottom: 4 }}>Você ainda não faz parte de uma família!</Text>
           <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>Escolha uma opção para começar a cuidar do seu pet em grupo.</Text>
 
           <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 15, alignItems: 'center' }} onPress={() => setFluxoAberto('criando')}>
-            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Criar Nova Matilha</Text>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Criar Nova Família</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={{ borderWidth: 2, borderColor: '#0066FF', paddingVertical: 18, borderRadius: 15, alignItems: 'center' }} onPress={() => setFluxoAberto('entrando')}>
@@ -215,7 +215,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 1000 }}>
             <View style={{ width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10 }}>
               <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 }}>
-                {fluxoAberto === 'criando' ? 'Nome da Matilha' : 'Entrar na Matilha'}
+                {fluxoAberto === 'criando' ? 'Nome da Família' : 'Entrar na Família'}
               </Text>
               
               <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' }} placeholder={fluxoAberto === 'criando' ? "Ex: Casa do Carlos" : "Código de Convite (Ex: PET-777)"} placeholderTextColor="#999" value={fluxoAberto === 'criando' ? nomeMatilha : codigoConvite} onChangeText={fluxoAberto === 'criando' ? setNomeMatilha : setCodigoConvite} />
@@ -239,7 +239,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
   }
 
   const meuPerfil = cuidadores.find(c => c.nome.replace(' (Você)', '') === usuarioLogado);
-  const souDono = meuPerfil?.funcao === 'Dono(a) da Matilha';
+  const souDono = meuPerfil?.funcao === 'Dono(a) da Família';
 
   return (
     <View style={styles.container}>
@@ -270,7 +270,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
         </ScrollView>
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A' }}>Canto da Matilha</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A' }}>Canto da Família</Text>
           {souDono && (
             <TouchableOpacity onPress={() => { setInputNovoNome(nomeDaMatilhaAtual); setModalNomeAberto(true); }} style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="pencil" size={16} color="#0066FF" />
@@ -292,7 +292,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
                 <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#1A1A1A' }}>{isEuMesmo ? `${nomeLimpo} (Você)` : nomeLimpo}</Text>
                 <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>{c.funcao}</Text>
               </View>
-              {souDono && !isEuMesmo && c.funcao !== 'Dono(a) da Matilha' && (
+              {souDono && !isEuMesmo && c.funcao !== 'Dono(a) da Família' && (
                 <TouchableOpacity onPress={() => removerCuidador(c.id)} style={{ padding: 8 }}>
                   <Ionicons name="exit-outline" size={24} color="#FF3B30" />
                 </TouchableOpacity>
@@ -306,7 +306,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
         </TouchableOpacity>
 
         <View style={{ padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#F0F0F0', backgroundColor: '#FFF', elevation: 2 }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 15 }}>Mural da Matilha:</Text>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 15 }}>Mural da Família:</Text>
           <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 12, marginBottom: 12, fontSize: 14, backgroundColor: '#FAFAFA', minHeight: 60, textAlignVertical: 'top' }} placeholder="Digite aqui o que aconteceu..." placeholderTextColor="#999" value={novoRecado} onChangeText={setNovoRecado} multiline />
           <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 12, borderRadius: 12, alignItems: 'center', marginBottom: 10 }} onPress={salvarRecado}>
             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 14 }}>{editandoId ? 'Atualizar Recado' : 'Adicionar Recado'}</Text>
@@ -343,7 +343,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
         </View>
 
         <TouchableOpacity onPress={sairMatilha} style={{ marginTop: 30 }}>
-           <Text style={{ textAlign: 'center', color: '#FF3B30', fontWeight: 'bold', fontSize: 14 }}>Sair da Matilha</Text>
+           <Text style={{ textAlign: 'center', color: '#FF3B30', fontWeight: 'bold', fontSize: 14 }}>Sair da Família</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -351,8 +351,8 @@ export default function FamilyPetScreen({ navigation }: Props) {
       {modalNomeAberto && (
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 1000 }}>
           <View style={{ width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10 }}>
-            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 }}>Renomear Matilha</Text>
-            <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' }} placeholder="Novo nome da matilha..." placeholderTextColor="#999" value={inputNovoNome} onChangeText={setInputNovoNome} />
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 }}>Renomear Família</Text>
+            <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' }} placeholder="Novo nome da família..." placeholderTextColor="#999" value={inputNovoNome} onChangeText={setInputNovoNome} />
             <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 }} onPress={alterarNomeMatilha}>
               <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Salvar</Text>
             </TouchableOpacity>
@@ -366,7 +366,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
       {caixaConviteVisivel && (
         <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 1000 }}>
           <View style={{ width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10 }}>
-            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 }}>Convite da Matilha</Text>
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 }}>Convite da Família</Text>
             <Text style={{ textAlign: 'center', marginBottom: 20, color: '#666' }}>Compartilhe o código abaixo com seus familiares!</Text>
             <View style={{ backgroundColor: '#F0F8FF', padding: 20, borderRadius: 12, alignItems: 'center', marginBottom: 25, borderWidth: 1, borderColor: '#0066FF', borderStyle: 'dashed' }}>
               <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0066FF', letterSpacing: 2 }}>{codigoMatilhaAtiva}</Text>

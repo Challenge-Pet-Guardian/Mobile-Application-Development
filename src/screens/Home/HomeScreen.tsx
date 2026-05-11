@@ -37,7 +37,7 @@ export default function Home({ navigation }: any) {
     
     const [xpTotal, setXpTotal] = useState(0);
     const [ofensivaTotal, setOfensivaTotal] = useState(0); 
-    const [householdName, setHouseholdName] = useState('Minha Matilha'); 
+    const [householdName, setHouseholdName] = useState('Minha Família'); 
     const [petsDaMatilha, setPetsDaMatilha] = useState<Pet[]>([]);
     const [nomePetPrincipal, setNomePetPrincipal] = useState('Pets'); 
 
@@ -229,8 +229,8 @@ export default function Home({ navigation }: any) {
             await AsyncStorage.setItem('@PetGuardian_TarefaVermifugoAtiva', 'true');
             atualizarOfensivaReal(); 
             await registrarXPIndividual(50);
-            if (Platform.OS !== 'web') Alert.alert('Excelente!', '+50 XP ganhos pela matilha! 🐾');
-            else window.alert('Excelente! +50 XP ganhos pela matilha! 🐾');
+            if (Platform.OS !== 'web') Alert.alert('Excelente!', '+50 XP ganhos pela família! 🐾');
+            else window.alert('Excelente! +50 XP ganhos pela família! 🐾');
         } catch (error) { console.log(error); }
     };
 
@@ -250,8 +250,8 @@ export default function Home({ navigation }: any) {
                     <View style={styles.emptyStateContainer}>
                         <MaterialCommunityIcons name="home-group" size={80} color="#1CB0F6" />
                         <Text style={styles.emptyStateTitle}>Bem-vindo ao PetGuardian!</Text>
-                        <Text style={styles.emptyStateText}>Para ver as tarefas do dia, você precisa de uma matilha.</Text>
-                        <TouchableOpacity style={styles.emptyStateButton} onPress={() => navigation.navigate('Family')}><Text style={styles.emptyStateButtonText}>Criar ou Entrar numa Matilha</Text></TouchableOpacity>
+                        <Text style={styles.emptyStateText}>Para ver as tarefas do dia, você precisa de uma família.</Text>
+                        <TouchableOpacity style={styles.emptyStateButton} onPress={() => navigation.navigate('Family')}><Text style={styles.emptyStateButtonText}>Criar ou Entrar numa Família</Text></TouchableOpacity>
                     </View>
                 </ScrollView>
                 <StatusBar style="dark" />
@@ -266,7 +266,7 @@ export default function Home({ navigation }: any) {
                     <Header title="Home" />
                     <View style={styles.emptyStateContainer}>
                         <MaterialCommunityIcons name="dog" size={80} color="#FF9600" />
-                        <Text style={styles.emptyStateTitle}>Matilha Pronta!</Text>
+                        <Text style={styles.emptyStateTitle}>Família Pronta!</Text>
                         <Text style={styles.emptyStateText}>Cadastre o seu primeiro pet para liberar o painel de tarefas!</Text>
                         <TouchableOpacity style={[styles.emptyStateButton, { backgroundColor: '#FF9600' }]} onPress={() => navigation.navigate('MeuPet')}><Text style={styles.emptyStateButtonText}>Cadastrar meu Pet</Text></TouchableOpacity>
                     </View>
@@ -293,7 +293,7 @@ export default function Home({ navigation }: any) {
                     </View>
                     <View style={styles.petInfoContainer}>
                         <Text style={styles.petName} numberOfLines={1}>{householdName}</Text>
-                        <Text style={styles.petStatus}>A matilha tem {xpTotal} XP!</Text>
+                        <Text style={styles.petStatus}>A família tem {xpTotal} XP!</Text>
                     </View>
                 </View>
 

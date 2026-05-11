@@ -218,7 +218,7 @@ export default function UserProfileScreen({ navigation }: any) {
         </View>
 
         {!emMatilha && (
-          <Text style={styles.avisoSemMatilha}>Entre ou crie uma matilha para começar a ganhar pontos!</Text>
+          <Text style={styles.avisoSemMatilha}>Entre ou crie uma família para começar a ganhar pontos!</Text>
         )}
 
         <View style={styles.menuContainer}>
@@ -240,7 +240,7 @@ export default function UserProfileScreen({ navigation }: any) {
           </TouchableOpacity>
           <TouchableOpacity style={[styles.menuItem, { marginTop: 20 }]} onPress={handleLogout}>
             <View style={[styles.menuIconWrapper, { backgroundColor: '#FFF5F5' }]}><Ionicons name="log-out-outline" size={22} color="#E53E3E" /></View>
-            <Text style={[styles.menuText, { color: '#E53E3E' }]}>Sair da Conta</Text>
+            <Text style={[styles.menuText, { color: '#E53E3E' }]} >Sair da Conta</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -299,7 +299,7 @@ export default function UserProfileScreen({ navigation }: any) {
                   <Ionicons name="people-outline" size={20} color="#0066FF" />
                   <Text style={styles.faqQuestion}>Como convidar familiares?</Text>
                 </View>
-                <Text style={styles.faqAnswer}>Na aba "Family Pet", clique em "Convidar Familiar" para gerar um código seguro. Compartilhe este código para eles entrarem na sua matilha e cuidarem do pet juntos.</Text>
+                <Text style={styles.faqAnswer}>Na aba "Family Pet", clique em "Convidar Familiar" para gerar um código seguro. Compartilhe este código para eles entrarem na sua família e cuidarem do pet juntos.</Text>
               </View>
 
               <View style={styles.faqCard}>
@@ -315,13 +315,13 @@ export default function UserProfileScreen({ navigation }: any) {
                   <Ionicons name="trophy-outline" size={20} color="#0066FF" />
                   <Text style={styles.faqQuestion}>Como funciona o Ranking e o XP?</Text>
                 </View>
-                <Text style={styles.faqAnswer}>Cada vez que você completa uma tarefa na Home, você ganha XP. O Ranking mostra a sua posição dentro da matilha. Quem cuidar mais do pet, fica em primeiro lugar!</Text>
+                <Text style={styles.faqAnswer}>Cada vez que você completa uma tarefa na Home, você ganha XP. O Ranking mostra a sua posição dentro da família. Quem cuidar mais do pet, fica em primeiro lugar!</Text>
               </View>
 
               <View style={styles.faqCard}>
                 <View style={styles.faqQuestionRow}>
                   <Ionicons name="paw-outline" size={20} color="#0066FF" />
-                  <Text style={styles.faqQuestion}>Posso ter mais de um pet na matilha?</Text>
+                  <Text style={styles.faqQuestion}>Posso ter mais de um pet na família?</Text>
                 </View>
                 <Text style={styles.faqAnswer}>Com certeza! Vá até a tela "Meu Pet", deslize os avatares dos animais para o lado e clique no botão tracejado "Novo" para adicionar outro bichinho à família.</Text>
               </View>
