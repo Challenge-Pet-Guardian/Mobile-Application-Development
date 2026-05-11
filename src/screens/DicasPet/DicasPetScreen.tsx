@@ -29,7 +29,7 @@ export default function DicasScreen() {
         data={DICAS_PET}
         showsVerticalScrollIndicator={false}
         keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 130 }} 
         renderItem={({ item, index }) => (
           <Animated.View entering={FadeInDown.delay(index * 100)}>
             <TouchableOpacity activeOpacity={0.8} style={{ backgroundColor: '#FFF', padding: 20, borderRadius: 20, marginBottom: 16, borderWidth: 1, borderColor: '#EDF2F7', elevation: 2, flexDirection: 'row', alignItems: 'flex-start' }}>
