@@ -292,21 +292,48 @@ export default function UserProfileScreen({ navigation }: any) {
                 <Ionicons name="close" size={24} color="#718096" />
               </TouchableOpacity>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+              
               <View style={styles.faqCard}>
                 <View style={styles.faqQuestionRow}>
                   <Ionicons name="people-outline" size={20} color="#0066FF" />
                   <Text style={styles.faqQuestion}>Como convidar familiares?</Text>
                 </View>
-                <Text style={styles.faqAnswer}>Na aba "Family Pet", clique em "Convidar Familiar" para gerar um código seguro. Compartilhe este código para eles entrarem na sua matilha.</Text>
+                <Text style={styles.faqAnswer}>Na aba "Family Pet", clique em "Convidar Familiar" para gerar um código seguro. Compartilhe este código para eles entrarem na sua matilha e cuidarem do pet juntos.</Text>
               </View>
+
               <View style={styles.faqCard}>
                 <View style={styles.faqQuestionRow}>
                   <Ionicons name="checkmark-done-circle-outline" size={22} color="#0066FF" />
                   <Text style={styles.faqQuestion}>Se eu fizer uma tarefa, os outros veem?</Text>
                 </View>
-                <Text style={styles.faqAnswer}>Sim! A rotina é sincronizada. Se marcar que já deu a ração, os outros tutores saberão que o pet já foi cuidado.</Text>
+                <Text style={styles.faqAnswer}>Sim! A rotina do animal é sincronizada. Se você marcar que já deu a ração, todos os outros tutores saberão que o pet já foi alimentado, evitando dose dupla.</Text>
               </View>
+
+              <View style={styles.faqCard}>
+                <View style={styles.faqQuestionRow}>
+                  <Ionicons name="trophy-outline" size={20} color="#0066FF" />
+                  <Text style={styles.faqQuestion}>Como funciona o Ranking e o XP?</Text>
+                </View>
+                <Text style={styles.faqAnswer}>Cada vez que você completa uma tarefa na Home, você ganha XP. O Ranking mostra a sua posição dentro da matilha. Quem cuidar mais do pet, fica em primeiro lugar!</Text>
+              </View>
+
+              <View style={styles.faqCard}>
+                <View style={styles.faqQuestionRow}>
+                  <Ionicons name="paw-outline" size={20} color="#0066FF" />
+                  <Text style={styles.faqQuestion}>Posso ter mais de um pet na matilha?</Text>
+                </View>
+                <Text style={styles.faqAnswer}>Com certeza! Vá até a tela "Meu Pet", deslize os avatares dos animais para o lado e clique no botão tracejado "Novo" para adicionar outro bichinho à família.</Text>
+              </View>
+
+              <View style={styles.faqCard}>
+                <View style={styles.faqQuestionRow}>
+                  <Ionicons name="flame-outline" size={20} color="#0066FF" />
+                  <Text style={styles.faqQuestion}>O que significa o foguinho de Ofensiva?</Text>
+                </View>
+                <Text style={styles.faqAnswer}>É o seu combo de dias seguidos cuidando do pet! Conclua pelo menos uma tarefa principal por dia na Home para manter a chama acesa e não perder a sua ofensiva.</Text>
+              </View>
+
             </ScrollView>
           </View>
         </View>
