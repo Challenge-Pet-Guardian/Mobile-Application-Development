@@ -9,7 +9,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { STORAGE_KEYS } from '../../constants/Keys';
 import { Header } from '../../components/Header';
 
-// Array de avatares para mostrar a carinha dos pets na lista!
 const AVATARES_DISPONIVEIS = [
   { id: '1', imagem: require('../../assets/img/cachorro-01.jpg') }, 
   { id: '2', imagem: require('../../assets/img/cachorro-02.jpg') }, 
@@ -30,16 +29,19 @@ export default function FamilyPetScreen({ navigation }: Props) {
   const [minhaFuncao, setMinhaFuncao] = useState('');
   
   const [codigoMatilhaAtiva, setCodigoMatilhaAtiva] = useState('');
-  const [nomeDaMatilhaAtual, setNomeDaMatilhaAtual] = useState('Family Pet'); // Novo: Guarda o nome da casa!
+  const [nomeDaMatilhaAtual, setNomeDaMatilhaAtual] = useState('Family Pet'); 
 
   const [cuidadores, setCuidadores] = useState<Cuidador[]>([]);
   const [recados, setRecados] = useState<Recado[]>([]);
-  const [petsDaMatilha, setPetsDaMatilha] = useState<any[]>([]); // Novo: Guarda os pets!
+  const [petsDaMatilha, setPetsDaMatilha] = useState<any[]>([]); 
 
   const [novoRecado, setNovoRecado] = useState('');
   const [usuarioLogado, setUsuarioLogado] = useState('Tutor');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [caixaConviteVisivel, setCaixaConviteVisivel] = useState(false);
+
+  const [modalNomeAberto, setModalNomeAberto] = useState(false);
+  const [inputNovoNome, setInputNovoNome] = useState('');
 
   const carregarDados = async () => {
     try {
@@ -50,11 +52,9 @@ export default function FamilyPetScreen({ navigation }: Props) {
         if (conta.nome) { nomeUsuarioAtual = conta.nome; setUsuarioLogado(conta.nome); }
       }
 
-      // Carrega o Nome da Matilha
       const nomeSalvo = await AsyncStorage.getItem('@PetGuardian_NomeMatilha');
       if (nomeSalvo) setNomeDaMatilhaAtual(nomeSalvo);
 
-      // Carrega os Pets
       const petsSalvos = await AsyncStorage.getItem('@PetGuardian_ListaPets');
       if (petsSalvos) setPetsDaMatilha(JSON.parse(petsSalvos));
 
@@ -65,18 +65,27 @@ export default function FamilyPetScreen({ navigation }: Props) {
       const dadosRecados = await AsyncStorage.getItem(STORAGE_KEYS.RECADOS);
       if (dadosRecados) setRecados(JSON.parse(dadosRecados));
 
-      const matilhaSalva = await AsyncStorage.getItem('@PetGuardian_MatilhaAtiva');
+      let matilhaSalva = await AsyncStorage.getItem('@PetGuardian_MatilhaAtiva');
+      const usuarioEstaNaLista = listaCuidadores.some(c => c.nome.replace(' (Você)', '').trim() === nomeUsuarioAtual.trim());
+
+      if (usuarioEstaNaLista && matilhaSalva !== 'sim') {
+          await AsyncStorage.setItem('@PetGuardian_MatilhaAtiva', 'sim');
+          matilhaSalva = 'sim';
+      } else if (!usuarioEstaNaLista && matilhaSalva === 'sim') {
+          await AsyncStorage.setItem('@PetGuardian_MatilhaAtiva', 'nao');
+          matilhaSalva = 'nao';
+      }
+
       let codigoSalvo = await AsyncStorage.getItem('@PetGuardian_CodigoMatilha');
       
-      if (matilhaSalva && !codigoSalvo) {
+      if (matilhaSalva === 'sim' && !codigoSalvo) {
         codigoSalvo = `PET-${Math.floor(1000 + Math.random() * 9000)}`;
         await AsyncStorage.setItem('@PetGuardian_CodigoMatilha', codigoSalvo);
       }
 
       if (codigoSalvo) setCodigoMatilhaAtiva(codigoSalvo);
       
-      const usuarioEstaNaLista = listaCuidadores.some(c => c.nome.replace(' (Você)', '') === nomeUsuarioAtual);
-      setTemMatilha(matilhaSalva && usuarioEstaNaLista ? true : false);
+      setTemMatilha(matilhaSalva === 'sim' && usuarioEstaNaLista ? true : false);
     } catch (error) { console.log(error); }
   };
 
@@ -89,25 +98,33 @@ export default function FamilyPetScreen({ navigation }: Props) {
     if (fluxoAberto === 'entrando') {
       const codigoRealDaMatilha = await AsyncStorage.getItem('@PetGuardian_CodigoMatilha');
       if (codigoConvite.toUpperCase() !== codigoRealDaMatilha) {
-        Alert.alert('Código Inválido 🚫', 'Não encontramos nenhuma matilha com esse código.');
+        if (Platform.OS === 'web') window.alert('Código Inválido 🚫\nNão encontramos nenhuma matilha com esse código.');
+        else Alert.alert('Código Inválido 🚫', 'Não encontramos nenhuma matilha com esse código.');
         return; 
       }
     }
 
     let novaListaCuidadores = [...cuidadores];
+    let nomeTratado = usuarioLogado.replace(' (Você)', '').trim();
 
-    // SOLUÇÃO DOS DOIS DONOS: Se estiver criando uma casa nova, limpa a sujeira antiga!
+    const jaEstaNaLista = novaListaCuidadores.some(c => c.nome.replace(' (Você)', '').trim() === nomeTratado);
+    
+    if (jaEstaNaLista && fluxoAberto === 'entrando') {
+        if (Platform.OS === 'web') window.alert('Você já faz parte desta matilha!');
+        else Alert.alert('Aviso', 'Você já faz parte desta matilha!');
+        setFluxoAberto('nenhum');
+        setMinhaFuncao('');
+        setCodigoConvite('');
+        return; 
+    }
+
     if (fluxoAberto === 'criando') {
       novaListaCuidadores = [];
       await AsyncStorage.setItem('@PetGuardian_NomeMatilha', nomeMatilha);
       setNomeDaMatilhaAtual(nomeMatilha);
-      
-      setRecados([]); // Limpa o mural velho
+      setRecados([]); 
       await AsyncStorage.removeItem(STORAGE_KEYS.RECADOS);
     }
-
-    let nomeTratado = usuarioLogado.replace(' (Você)', '');
-    const jaEstaNaLista = novaListaCuidadores.some(c => c.nome.replace(' (Você)', '') === nomeTratado);
     
     if (!jaEstaNaLista) {
       const meuUsuario: Cuidador = { id: Date.now().toString(), nome: nomeTratado, funcao: fluxoAberto === 'criando' ? 'Dono(a) da Matilha' : minhaFuncao };
@@ -147,7 +164,6 @@ export default function FamilyPetScreen({ navigation }: Props) {
   const salvarRecado = async () => {
     if (novoRecado.trim() === '') return; 
     
-    // SOLUÇÃO DA DATA NOS RECADOS
     const dataHj = new Date();
     const horaStr = dataHj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const dataStr = dataHj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
@@ -167,6 +183,13 @@ export default function FamilyPetScreen({ navigation }: Props) {
   const prepararEdicao = (recado: Recado) => { setNovoRecado(recado.texto); setEditandoId(recado.id); };
   const removerRecado = async (id: string) => { const novaLista = recados.filter(r => r.id !== id); setRecados(novaLista); await AsyncStorage.setItem(STORAGE_KEYS.RECADOS, JSON.stringify(novaLista)); };
   const getInitials = (name: string) => { if (!name) return '??'; return name.replace(' (Você)', '').substring(0, 2).toUpperCase(); };
+
+  const alterarNomeMatilha = async () => {
+    if (inputNovoNome.trim() === '') return;
+    await AsyncStorage.setItem('@PetGuardian_NomeMatilha', inputNovoNome);
+    setNomeDaMatilhaAtual(inputNovoNome);
+    setModalNomeAberto(false);
+  };
 
   if (!temMatilha) {
     return (
@@ -223,11 +246,9 @@ export default function FamilyPetScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         
         <View style={{ paddingTop: Platform.OS === 'ios' ? 30 : 10, paddingBottom: 10 }}>
-            {/* SOLUÇÃO NOME DA MATILHA MOSTRANDO NO TOPO! */}
             <Header title={nomeDaMatilhaAtual}/>
         </View>
 
-        {/* SOLUÇÃO MOSTRANDO OS ANIMAIS DA MATILHA! */}
         <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 10 }}>Nossos Animais</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 25 }}>
           {petsDaMatilha.length === 0 ? (
@@ -248,7 +269,15 @@ export default function FamilyPetScreen({ navigation }: Props) {
           )}
         </ScrollView>
 
-        <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 }}>Canto da Matilha</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A' }}>Canto da Matilha</Text>
+          {souDono && (
+            <TouchableOpacity onPress={() => { setInputNovoNome(nomeDaMatilhaAtual); setModalNomeAberto(true); }} style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="pencil" size={16} color="#0066FF" />
+              <Text style={{ color: '#0066FF', fontWeight: 'bold', marginLeft: 4, fontSize: 14 }}>Renomear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <Text style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>Lista de Cuidadores</Text>
 
         {cuidadores.map((c, index) => {
@@ -318,6 +347,21 @@ export default function FamilyPetScreen({ navigation }: Props) {
         </TouchableOpacity>
 
       </ScrollView>
+
+      {modalNomeAberto && (
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 1000 }}>
+          <View style={{ width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10 }}>
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 }}>Renomear Matilha</Text>
+            <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' }} placeholder="Novo nome da matilha..." placeholderTextColor="#999" value={inputNovoNome} onChangeText={setInputNovoNome} />
+            <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 }} onPress={alterarNomeMatilha}>
+              <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Salvar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setModalNomeAberto(false)}>
+              <Text style={{ color: '#666', fontSize: 14, textAlign: 'center', textDecorationLine: 'underline' }}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      )}
 
       {caixaConviteVisivel && (
         <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20, zIndex: 1000 }}>

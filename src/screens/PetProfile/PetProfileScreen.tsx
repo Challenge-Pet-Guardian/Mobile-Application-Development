@@ -273,7 +273,7 @@ export default function PetProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: '#FAFAFA' },
   carrosselContainer: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#EDF2F7', backgroundColor: '#FFF' },
   listaDePets: { paddingHorizontal: 20, gap: 15, alignItems: 'center' },
   itemPetCarrossel: { alignItems: 'center', width: 64 },

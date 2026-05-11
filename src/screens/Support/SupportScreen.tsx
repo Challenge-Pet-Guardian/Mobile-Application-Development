@@ -139,7 +139,6 @@ export default function SupportScreen({ navigation }: any) {
         </View>
       </ScrollView>
 
-      {/* JANELAS SOBREPOSTAS */}
       {modalAtivo === 'contato' && (
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
           <View style={styles.modalContent}>

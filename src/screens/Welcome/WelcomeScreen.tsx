@@ -40,14 +40,12 @@ export default function WelcomeScreen({ navigation }: Props) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0A1628" />
 
-      {/* Elementos Visuais de Fundo */}
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
       <View style={styles.bgCircle3} />
 
       <View style={styles.content}>
         
-      
         <Animated.View
           entering={ZoomIn.duration(800)}
           style={styles.heroSection}
@@ -86,7 +84,7 @@ export default function WelcomeScreen({ navigation }: Props) {
           </View>
         </Animated.View>
 
-       
+        
         <Animated.View
           entering={FadeInDown.delay(400).duration(600)}
           style={styles.actionsBlock}
@@ -203,10 +201,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A3A6B',
     justifyContent: 'center',
     alignItems: 'center',
-    ...Platform.select({
-      ios: { shadowColor: '#0066FF', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16 },
-      android: { elevation: 12 },
-    }),
+    shadowColor: '#0066FF',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
   },
   iconEmoji: { fontSize: 30 },
   versionBadge: {
@@ -284,10 +283,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   btnShadow: {
-    ...Platform.select({
-      ios: { shadowColor: '#0066FF', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 16 },
-      android: { elevation: 10 },
-    }),
+    shadowColor: '#0066FF',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+    elevation: 10,
   },
   btnPrimaryText: {
     color: '#FFFFFF',

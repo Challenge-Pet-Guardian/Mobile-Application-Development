@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { STORAGE_KEYS } from '../../constants/Keys'; // <-- CORRIGIDO AQUI!
+import { STORAGE_KEYS } from '../../constants/Keys'; 
 
 const maxWidth = 400;
 
@@ -21,7 +21,7 @@ export default function AddMemberScreen({ navigation }: Props) {
     }
 
     const novo = { id: Date.now().toString(), nome, funcao };
-    // <-- CORRIGIDO AQUI TBM!
+
     const dados = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
     const lista = dados ? JSON.parse(dados) : [];
     lista.push(novo);

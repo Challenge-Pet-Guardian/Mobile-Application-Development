@@ -145,12 +145,17 @@ const styles = StyleSheet.create({
   title: { fontSize: 32, fontWeight: '900', color: '#1A202C', marginBottom: 8 },
   subtitle: { fontSize: 16, color: '#718096', textAlign: 'center' },
   formContainer: {
-    width: '100%', backgroundColor: '#FFFFFF', padding: 24, borderRadius: 24, borderWidth: 1, borderColor: '#EDF2F7',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
-      android: { elevation: 3 },
-      web: { boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.04)' }
-    }),
+    width: '100%', 
+    backgroundColor: '#FFFFFF', 
+    padding: 24, 
+    borderRadius: 24, 
+    borderWidth: 1, 
+    borderColor: '#EDF2F7',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
   inputLabel: { fontSize: 14, fontWeight: '600', color: '#4A5568', marginBottom: 8, marginLeft: 4 },
   input: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#E2E8F0', padding: 16, borderRadius: 16, marginBottom: 20, fontSize: 16, color: '#2D3748' },
@@ -160,11 +165,11 @@ const styles = StyleSheet.create({
   
   button: { backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginTop: 10 },
   buttonShadow: {
-    ...Platform.select({
-      ios: { shadowColor: '#0066FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
-      android: { elevation: 6 },
-      web: { boxShadow: '0px 8px 20px rgba(0, 102, 255, 0.25)' }
-    }),
+    shadowColor: '#0066FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   buttonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
