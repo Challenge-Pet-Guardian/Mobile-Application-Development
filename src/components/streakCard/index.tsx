@@ -1,20 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
-
-interface StreakDay {
-    id: number;
-    dayLabel: string;
-    dayNumber: string;
-    status: 'feito' | 'perdido' | 'hoje' | 'futuro';
-}
+import { DiaOfensiva } from '../../types/models';
 
 interface StreakCardProps {
-    streakDays: StreakDay[];
+    streakDays: DiaOfensiva[];
     totalStreak: number; 
 }
 
-const renderIcon = (status: StreakDay['status']) => {
+const renderIcon = (status: DiaOfensiva['status']) => {
     switch (status) {
         case 'feito':
             return <MaterialCommunityIcons name="fire" size={16} color="#FFF" />;

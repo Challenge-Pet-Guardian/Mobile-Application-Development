@@ -3,30 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInp
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Header } from '../../components/Header';
-
-const AVATARES_DISPONIVEIS = [
-  { id: '1', imagem: require('../../assets/img/cachorro-01.jpg') }, 
-  { id: '2', imagem: require('../../assets/img/cachorro-02.jpg') }, 
-  { id: '3', imagem: require('../../assets/img/gato-01.jpg') }, 
-  { id: '4', imagem: require('../../assets/img/gato-02.jpg') }, 
-  { id: '5', imagem: require('../../assets/img/coelho.jpg') }, 
-];
-
-interface Pet {
-  id: string;
-  avatarId: string;
-  nome: string;
-  raca: string;
-  idade: string;
-  peso: string;
-  sexo: string;
-  castrado: string;
-  ultimaVacina: string;
-  ultimaConsulta: string;
-  veterinario: string;
-  alergias: string;
-  medicamentos: string;
-}
+import { STORAGE_KEYS } from '../../constants/Keys';
+import { Pet } from '../../types/models';
+import { AVATARES_DISPONIVEIS } from '../../constants/Avatares';
 
 export default function PetProfileScreen() {
   const [meusPets, setMeusPets] = useState<Pet[]>([]);
@@ -51,7 +30,7 @@ export default function PetProfileScreen() {
 
   const carregarPets = async () => {
     try {
-      const dados = await AsyncStorage.getItem('@PetGuardian_ListaPets');
+      const dados = await AsyncStorage.getItem(STORAGE_KEYS.LISTA_PETS);
       if (dados) {
         const lista: Pet[] = JSON.parse(dados);
         setMeusPets(lista);
@@ -65,19 +44,19 @@ export default function PetProfileScreen() {
   };
 
   const selecionarPet = (pet: Pet) => {
-    setPetAtualId(pet.id);
-    setAvatarEscolhidoId(pet.avatarId);
-    setNome(pet.nome);
-    setRaca(pet.raca);
-    setIdade(pet.idade);
-    setPeso(pet.peso);
-    setSexo(pet.sexo);
-    setCastrado(pet.castrado);
-    setUltimaVacina(pet.ultimaVacina);
+    setPetAtualId(pet.id || null);
+    setAvatarEscolhidoId(pet.avatarId || '1');
+    setNome(pet.nome || '');
+    setRaca(pet.raca || '');
+    setIdade(pet.idade || '');
+    setPeso(pet.peso || '');
+    setSexo(pet.sexo || '');
+    setCastrado(pet.castrado || '');
+    setUltimaVacina(pet.ultimaVacina || '');
     setUltimaConsulta(pet.ultimaConsulta || '');
-    setVeterinario(pet.veterinario);
-    setAlergias(pet.alergias);
-    setMedicamentos(pet.medicamentos);
+    setVeterinario(pet.veterinario || '');
+    setAlergias(pet.alergias || '');
+    setMedicamentos(pet.medicamentos || '');
   };
 
   const prepararNovoPet = () => {
@@ -109,8 +88,8 @@ export default function PetProfileScreen() {
         novaLista.push(dadosDoFormulario);
       }
       setMeusPets(novaLista);
-      setPetAtualId(dadosDoFormulario.id);
-      await AsyncStorage.setItem('@PetGuardian_ListaPets', JSON.stringify(novaLista));
+      setPetAtualId(dadosDoFormulario.id ?? null);
+      await AsyncStorage.setItem(STORAGE_KEYS.LISTA_PETS, JSON.stringify(novaLista));
       Alert.alert('Sucesso!', 'Perfil salvo com sucesso.');
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar.');
@@ -141,7 +120,7 @@ export default function PetProfileScreen() {
     try {
       const novaLista = meusPets.filter(p => p.id !== petAtualId);
       setMeusPets(novaLista);
-      await AsyncStorage.setItem('@PetGuardian_ListaPets', JSON.stringify(novaLista));
+      await AsyncStorage.setItem(STORAGE_KEYS.LISTA_PETS, JSON.stringify(novaLista));
       
       if (novaLista.length > 0) {
         selecionarPet(novaLista[0]);
@@ -170,11 +149,11 @@ export default function PetProfileScreen() {
         <View style={styles.carrosselContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.listaDePets}>
             {meusPets.map((pet) => (
-              <TouchableOpacity key={pet.id} onPress={() => selecionarPet(pet)} style={styles.itemPetCarrossel}>
+              <TouchableOpacity key={pet.id ?? '0'} onPress={() => selecionarPet(pet)} style={styles.itemPetCarrossel}>
                 <View style={[styles.miniAvatarBorda, petAtualId === pet.id && styles.miniAvatarSelecionado]}>
                   <Image source={AVATARES_DISPONIVEIS.find(a => a.id === pet.avatarId)?.imagem} style={styles.miniAvatarImg} />
                 </View>
-                <Text style={[styles.miniAvatarTexto, petAtualId === pet.id && styles.miniAvatarTextoSelecionado]}>{pet.nome.split(' ')[0]}</Text>
+                <Text style={[styles.miniAvatarTexto, petAtualId === pet.id && styles.miniAvatarTextoSelecionado]}>{(pet.nome || '').split(' ')[0]}</Text>
               </TouchableOpacity>
             ))}
             <TouchableOpacity onPress={prepararNovoPet} style={styles.itemPetCarrossel}>

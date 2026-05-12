@@ -13,6 +13,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { STORAGE_KEYS } from '../../constants/Keys'; 
+import { LoginSchema } from '../../utils/schemas';
+import { z } from 'zod';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -29,23 +31,15 @@ export default function LoginScreen({ navigation }: Props) {
     setEmailErro('');
     setSenhaErro('');
 
-    let temErro = false;
-    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
-
-    if (email.trim() === '') {
-      setEmailErro('Por favor, insira o seu e-mail.');
-      temErro = true;
-    } else if (reg.test(email) === false) {
-      setEmailErro('O e-mail está com formato errado!');
-      temErro = true;
-    }
-
-    if (senha.trim() === '') {
-      setSenhaErro('Por favor, insira a sua senha.');
-      temErro = true;
-    }
-
-    if (temErro) {
+    try {
+      LoginSchema.parse({ email: email.trim(), senha });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        error.errors.forEach((err) => {
+          if (err.path[0] === 'email') setEmailErro(err.message);
+          if (err.path[0] === 'senha') setSenhaErro(err.message);
+        });
+      }
       return;
     }
 

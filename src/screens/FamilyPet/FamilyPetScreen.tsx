@@ -8,18 +8,10 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { STORAGE_KEYS } from '../../constants/Keys';
 import { Header } from '../../components/Header';
-
-const AVATARES_DISPONIVEIS = [
-  { id: '1', imagem: require('../../assets/img/cachorro-01.jpg') }, 
-  { id: '2', imagem: require('../../assets/img/cachorro-02.jpg') }, 
-  { id: '3', imagem: require('../../assets/img/gato-01.jpg') }, 
-  { id: '4', imagem: require('../../assets/img/gato-02.jpg') }, 
-  { id: '5', imagem: require('../../assets/img/coelho.jpg') }, 
-];
+import { Pet, Cuidador, Recado } from '../../types/models';
+import { AVATARES_DISPONIVEIS } from '../../constants/Avatares';
 
 type Props = { navigation: NativeStackNavigationProp<any>; };
-type Recado = { id: string; texto: string; hora: string; autor: string; };
-type Cuidador = { id: string; nome: string; funcao: string; };
 
 export default function FamilyPetScreen({ navigation }: Props) {
   const [temMatilha, setTemMatilha] = useState(false);
@@ -33,7 +25,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
   const [cuidadores, setCuidadores] = useState<Cuidador[]>([]);
   const [recados, setRecados] = useState<Recado[]>([]);
-  const [petsDaMatilha, setPetsDaMatilha] = useState<any[]>([]); 
+  const [petsDaMatilha, setPetsDaMatilha] = useState<Pet[]>([]); 
 
   const [novoRecado, setNovoRecado] = useState('');
   const [usuarioLogado, setUsuarioLogado] = useState('Tutor');
@@ -52,10 +44,10 @@ export default function FamilyPetScreen({ navigation }: Props) {
         if (conta.nome) { nomeUsuarioAtual = conta.nome; setUsuarioLogado(conta.nome); }
       }
 
-      const nomeSalvo = await AsyncStorage.getItem('@PetGuardian_NomeMatilha');
+      const nomeSalvo = await AsyncStorage.getItem(STORAGE_KEYS.NOME_MATILHA);
       if (nomeSalvo) setNomeDaMatilhaAtual(nomeSalvo);
 
-      const petsSalvos = await AsyncStorage.getItem('@PetGuardian_ListaPets');
+      const petsSalvos = await AsyncStorage.getItem(STORAGE_KEYS.LISTA_PETS);
       if (petsSalvos) setPetsDaMatilha(JSON.parse(petsSalvos));
 
       let listaCuidadores: Cuidador[] = [];
@@ -65,22 +57,22 @@ export default function FamilyPetScreen({ navigation }: Props) {
       const dadosRecados = await AsyncStorage.getItem(STORAGE_KEYS.RECADOS);
       if (dadosRecados) setRecados(JSON.parse(dadosRecados));
 
-      let matilhaSalva = await AsyncStorage.getItem('@PetGuardian_MatilhaAtiva');
+      let matilhaSalva = await AsyncStorage.getItem(STORAGE_KEYS.MATILHA_ATIVA);
       const usuarioEstaNaLista = listaCuidadores.some(c => c.nome.replace(' (Você)', '').trim() === nomeUsuarioAtual.trim());
 
       if (usuarioEstaNaLista && matilhaSalva !== 'sim') {
-          await AsyncStorage.setItem('@PetGuardian_MatilhaAtiva', 'sim');
+          await AsyncStorage.setItem(STORAGE_KEYS.MATILHA_ATIVA, 'sim');
           matilhaSalva = 'sim';
       } else if (!usuarioEstaNaLista && matilhaSalva === 'sim') {
-          await AsyncStorage.setItem('@PetGuardian_MatilhaAtiva', 'nao');
+          await AsyncStorage.setItem(STORAGE_KEYS.MATILHA_ATIVA, 'nao');
           matilhaSalva = 'nao';
       }
 
-      let codigoSalvo = await AsyncStorage.getItem('@PetGuardian_CodigoMatilha');
+      let codigoSalvo = await AsyncStorage.getItem(STORAGE_KEYS.CODIGO_MATILHA);
       
       if (matilhaSalva === 'sim' && !codigoSalvo) {
         codigoSalvo = `PET-${Math.floor(1000 + Math.random() * 9000)}`;
-        await AsyncStorage.setItem('@PetGuardian_CodigoMatilha', codigoSalvo);
+        await AsyncStorage.setItem(STORAGE_KEYS.CODIGO_MATILHA, codigoSalvo);
       }
 
       if (codigoSalvo) setCodigoMatilhaAtiva(codigoSalvo);
@@ -96,7 +88,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
     if (fluxoAberto === 'entrando' && (codigoConvite.trim() === '' || minhaFuncao.trim() === '')) return;
 
     if (fluxoAberto === 'entrando') {
-      const codigoRealDaMatilha = await AsyncStorage.getItem('@PetGuardian_CodigoMatilha');
+      const codigoRealDaMatilha = await AsyncStorage.getItem(STORAGE_KEYS.CODIGO_MATILHA);
       if (codigoConvite.toUpperCase() !== codigoRealDaMatilha) {
         if (Platform.OS === 'web') window.alert('Código Inválido 🚫\nNão encontramos nenhuma matilha com esse código.');
         else Alert.alert('Código Inválido 🚫', 'Não encontramos nenhuma matilha com esse código.');
@@ -120,7 +112,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
     if (fluxoAberto === 'criando') {
       novaListaCuidadores = [];
-      await AsyncStorage.setItem('@PetGuardian_NomeMatilha', nomeMatilha);
+      await AsyncStorage.setItem(STORAGE_KEYS.NOME_MATILHA, nomeMatilha);
       setNomeDaMatilhaAtual(nomeMatilha);
       setRecados([]); 
       await AsyncStorage.removeItem(STORAGE_KEYS.RECADOS);
@@ -135,13 +127,13 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
     if (fluxoAberto === 'criando') {
       const codigoFinal = `PET-${Math.floor(1000 + Math.random() * 9000)}`;
-      await AsyncStorage.setItem('@PetGuardian_CodigoMatilha', codigoFinal);
+      await AsyncStorage.setItem(STORAGE_KEYS.CODIGO_MATILHA, codigoFinal);
       setCodigoMatilhaAtiva(codigoFinal);
     } else {
       setCodigoMatilhaAtiva(codigoConvite.toUpperCase());
     }
 
-    await AsyncStorage.setItem('@PetGuardian_MatilhaAtiva', 'sim');
+    await AsyncStorage.setItem(STORAGE_KEYS.MATILHA_ATIVA, 'sim');
     setTemMatilha(true); setFluxoAberto('nenhum'); setMinhaFuncao(''); setCodigoConvite(''); setNomeMatilha('');
   };
 
@@ -149,8 +141,8 @@ export default function FamilyPetScreen({ navigation }: Props) {
     const novaLista = cuidadores.filter(c => c.nome.replace(' (Você)', '') !== usuarioLogado);
     setCuidadores(novaLista);
     await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(novaLista));
-    await AsyncStorage.removeItem('@PetGuardian_MatilhaAtiva');
-    await AsyncStorage.removeItem('@PetGuardian_CodigoMatilha');
+    await AsyncStorage.removeItem(STORAGE_KEYS.MATILHA_ATIVA);
+    await AsyncStorage.removeItem(STORAGE_KEYS.CODIGO_MATILHA);
     if (novaLista.length === 0) { await AsyncStorage.removeItem(STORAGE_KEYS.RECADOS); setRecados([]); }
     setTemMatilha(false);
   };
@@ -186,7 +178,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
   const alterarNomeMatilha = async () => {
     if (inputNovoNome.trim() === '') return;
-    await AsyncStorage.setItem('@PetGuardian_NomeMatilha', inputNovoNome);
+    await AsyncStorage.setItem(STORAGE_KEYS.NOME_MATILHA, inputNovoNome);
     setNomeDaMatilhaAtual(inputNovoNome);
     setModalNomeAberto(false);
   };

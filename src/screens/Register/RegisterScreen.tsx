@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform, K
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { STORAGE_KEYS } from '../../constants/Keys'; 
+import { RegisterSchema } from '../../utils/schemas';
+import { z } from 'zod';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>;
@@ -25,45 +27,28 @@ export default function RegisterScreen({ navigation }: Props) {
     setSenhaErro('');
     setConfirmarSenhaErro('');
 
-    let temErro = false;
-    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
-
-    if (nome.trim() === '') {
-      setNomeErro('O nome é obrigatório!');
-      temErro = true;
-    }
-
-    if (email.trim() === '') {
-      setEmailErro('O e-mail é obrigatório!');
-      temErro = true;
-    } else if (reg.test(email) === false) {
-      setEmailErro('O e-mail está com formato errado!');
-      temErro = true;
-    }
-
-    if (senha.trim() === '') {
-      setSenhaErro('A senha é obrigatória!');
-      temErro = true;
-    } else if (senha.length < 8) {
-      setSenhaErro('A senha deve ter no mínimo 8 dígitos!');
-      temErro = true;
-    }
-
-    if (confirmarSenha.trim() === '') {
-      setConfirmarSenhaErro('Confirme sua senha!');
-      temErro = true;
-    } else if (senha !== confirmarSenha) {
-      setConfirmarSenhaErro('As senhas não coincidem!');
-      temErro = true;
-    }
-
-    if (temErro) {
+    try {
+      RegisterSchema.parse({ 
+        nome: nome.trim(), 
+        email: email.trim(), 
+        senha, 
+        confirmarSenha 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        error.errors.forEach((err) => {
+          if (err.path[0] === 'nome') setNomeErro(err.message);
+          if (err.path[0] === 'email') setEmailErro(err.message);
+          if (err.path[0] === 'senha') setSenhaErro(err.message);
+          if (err.path[0] === 'confirmarSenha') setConfirmarSenhaErro(err.message);
+        });
+      }
       return;
     }
 
     try {
       await AsyncStorage.removeItem(STORAGE_KEYS.USER_DATA);
-      await AsyncStorage.removeItem('@PetGuardian_MatilhaAtiva');
+      await AsyncStorage.removeItem(STORAGE_KEYS.MATILHA_ATIVA);
 
       const userData = { nome, email, senha };
       

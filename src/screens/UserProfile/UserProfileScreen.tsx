@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInp
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { STORAGE_KEYS } from '../../constants/Keys';
+import { StatCard } from '../../components/StatCard';
+import { ProfileEditSchema } from '../../utils/schemas';
+import { z } from 'zod';
 
 export default function UserProfileScreen({ navigation }: any) {
   const [nome, setNome] = useState('Carregando...');
@@ -48,10 +51,10 @@ export default function UserProfileScreen({ navigation }: any) {
         setConfirmarEditSenha(userData.senha || '');
       }
 
-      const matilhaAtiva = await AsyncStorage.getItem('@PetGuardian_MatilhaAtiva');
+      const matilhaAtiva = await AsyncStorage.getItem(STORAGE_KEYS.MATILHA_ATIVA);
       setEmMatilha(matilhaAtiva === 'sim');
 
-      const ofensivaSalva = await AsyncStorage.getItem('@PetGuardian_OfensivaDias');
+      const ofensivaSalva = await AsyncStorage.getItem(STORAGE_KEYS.OFENSIVA_DIAS);
       if (ofensivaSalva) setStreak(Number(ofensivaSalva));
 
       const cuidadoresString = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
@@ -102,39 +105,22 @@ export default function UserProfileScreen({ navigation }: any) {
     setSenhaErro('');
     setConfirmarSenhaErro('');
 
-    let temErro = false;
-    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
-
-    if (editNome.trim() === '') {
-      setNomeErro('O nome é obrigatório!');
-      temErro = true;
-    }
-
-    if (editEmail.trim() === '') {
-      setEmailErro('O e-mail é obrigatório!');
-      temErro = true;
-    } else if (reg.test(editEmail) === false) {
-      setEmailErro('O e-mail está com formato errado!');
-      temErro = true;
-    }
-
-    if (editSenha.trim() === '') {
-      setSenhaErro('A senha é obrigatória!');
-      temErro = true;
-    } else if (editSenha.length < 8) {
-      setSenhaErro('A senha deve ter no mínimo 8 dígitos!');
-      temErro = true;
-    }
-
-    if (confirmarEditSenha.trim() === '') {
-      setConfirmarSenhaErro('Confirme sua senha!');
-      temErro = true;
-    } else if (editSenha !== confirmarEditSenha) {
-      setConfirmarSenhaErro('As senhas não coincidem!');
-      temErro = true;
-    }
-
-    if (temErro) {
+    try {
+      ProfileEditSchema.parse({ 
+        nome: editNome.trim(), 
+        email: editEmail.trim(), 
+        senha: editSenha, 
+        confirmarSenha: confirmarEditSenha 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        error.errors.forEach((err) => {
+          if (err.path[0] === 'nome') setNomeErro(err.message);
+          if (err.path[0] === 'email') setEmailErro(err.message);
+          if (err.path[0] === 'senha') setSenhaErro(err.message);
+          if (err.path[0] === 'confirmarSenha') setConfirmarSenhaErro(err.message);
+        });
+      }
       return;
     }
     
@@ -186,15 +172,6 @@ export default function UserProfileScreen({ navigation }: any) {
     setJanelaAberta('nenhum');
   };
 
-  const StatCard = ({ icon, label, value, color }: any) => (
-    <View style={styles.statCard}>
-      <View style={[styles.statIconCircle, { backgroundColor: color + '20' }]}>
-        <MaterialCommunityIcons name={icon} size={24} color={color} />
-      </View>
-      <Text style={[styles.statValue, { color: color === '#A0AEC0' ? '#A0AEC0' : '#1A202C' }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
@@ -374,10 +351,6 @@ const styles = StyleSheet.create({
   userName: { fontSize: 24, fontWeight: 'bold', color: '#1A202C', marginTop: 15 },
   userEmail: { fontSize: 15, color: '#718096', marginTop: 4 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: 25 },
-  statCard: { flex: 1, backgroundColor: '#FFF', marginHorizontal: 5, padding: 15, borderRadius: 20, alignItems: 'center', elevation: 2 },
-  statIconCircle: { width: 45, height: 45, borderRadius: 22.5, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  statValue: { fontSize: 16, fontWeight: 'bold' },
-  statLabel: { fontSize: 12, color: '#A0AEC0', marginTop: 2 },
   avisoSemMatilha: { textAlign: 'center', color: '#718096', fontSize: 13, marginTop: 15, paddingHorizontal: 40 },
   menuContainer: { marginTop: 35, paddingHorizontal: 20 },
   menuTitle: { fontSize: 16, fontWeight: 'bold', color: '#4A5568', marginBottom: 15, marginLeft: 5 },
