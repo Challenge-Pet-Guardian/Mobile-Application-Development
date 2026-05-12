@@ -55,9 +55,9 @@ export default function RegisterScreen({ navigation }: Props) {
       await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
       
       if (Platform.OS === 'web') {
-        window.alert('Conta criada! Faça o login para entrar na matilha.');
+        window.alert('Conta criada! Faça o login para entrar na família.');
       } else {
-        Alert.alert('Sucesso!', 'Conta criada! Faça o login para entrar na matilha.');
+        Alert.alert('Sucesso!', 'Conta criada! Faça o login para entrar na família.');
       }
       navigation.goBack();
     } catch (e) {
@@ -130,7 +130,7 @@ export default function RegisterScreen({ navigation }: Props) {
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Já faz parte de uma matilha? </Text>
+              <Text style={styles.footerText}>Já faz parte de uma família? </Text>
               <TouchableOpacity onPress={() => navigation.goBack()}>
                 <Text style={styles.linkText}>Fazer Login</Text>
               </TouchableOpacity>

@@ -28,7 +28,7 @@ export default function Home({ navigation }: Props) {
     
     const [xpTotal, setXpTotal] = useState(0);
     const [ofensivaTotal, setOfensivaTotal] = useState(0); 
-    const [householdName, setHouseholdName] = useState('Minha Matilha'); 
+    const [householdName, setHouseholdName] = useState('Minha Família'); 
     const [petsDaMatilha, setPetsDaMatilha] = useState<Pet[]>([]);
 
     const [tarefas, setTarefas] = useState<Tarefa[]>([]);
@@ -247,7 +247,7 @@ export default function Home({ navigation }: Props) {
                     </View>
                     <View style={styles.petInfoContainer}>
                         <Text style={styles.petName} numberOfLines={1}>{householdName}</Text>
-                        <Text style={styles.petStatus}>A matilha tem {xpTotal} XP!</Text>
+                        <Text style={styles.petStatus}>A família tem {xpTotal} XP!</Text>
                     </View>
                 </View>
 
