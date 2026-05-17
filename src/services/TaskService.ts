@@ -29,15 +29,26 @@ export const TaskService = {
             concluida: false
         };
 
+        // 1. Salva na "lista mãe" da Matilha
         const novasTarefas = [...todas, tarefaCriada];
         await AsyncStorage.setItem(STORAGE_KEYS.MATILHA_TAREFAS, JSON.stringify(novasTarefas));
 
-        // Aqui, futuramente, seria o lugar para sincronizar com a API/Firebase
+        // 2. Tenta salvar na cópia de progresso de HOJE (para aparecer no ecrã na hora!)
+        const dataHoje = new Date().toDateString();
+        const progressoKey = `${STORAGE_KEYS.PROGRESSO_PREFIX}${dataHoje}`;
+        const progressoSalvo = await AsyncStorage.getItem(progressoKey);
+
+        if (progressoSalvo) {
+            const tarefasHoje = JSON.parse(progressoSalvo);
+            // Adiciona a tarefa nova no final da lista de hoje
+            tarefasHoje.push(tarefaCriada);
+            await AsyncStorage.setItem(progressoKey, JSON.stringify(tarefasHoje));
+        }
     },
 
     /** Marca uma tarefa como concluída/pendente para o dia de HOJE */
     async atualizarStatusTarefaHoje(idTarefa: number, concluida: boolean): Promise<Tarefa[]> {
-        // Como o app resetta diariamente as tarefas feitas, a gente salva o progresso do dia atual
+        // Como o app faz reset diariamente às tarefas feitas, guardamos o progresso do dia atual
         const dataHoje = new Date().toDateString();
         const progressoKey = `${STORAGE_KEYS.PROGRESSO_PREFIX}${dataHoje}`;
         
