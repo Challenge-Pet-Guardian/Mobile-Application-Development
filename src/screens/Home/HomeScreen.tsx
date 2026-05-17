@@ -1,13 +1,16 @@
 import React, { useState, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
-import { Text, View, Image, StyleSheet, ScrollView, Platform, ActivityIndicator } from "react-native";
+import { 
+    Text, View, Image, StyleSheet, ScrollView, Platform, 
+    ActivityIndicator, TouchableOpacity, 
+    TextInput, KeyboardAvoidingView, Alert 
+} from "react-native";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Header } from "../../components/Header";
-import { StreakCard } from "../../components/StreakCard"; 
+import { StreakCard } from "../../components/streakCard";
 import { STORAGE_KEYS } from '../../constants/Keys';
 import { EmptyState } from "../../components/EmptyState";
 import { TipCard } from "../../components/TipCard";
@@ -18,13 +21,14 @@ import { Pet, Tarefa, DiaOfensiva } from '../../types/models';
 import { TaskService } from '../../services/TaskService';
 import { getAvatarById } from '../../constants/Avatares';
 
-type Props = {
-    navigation: NativeStackNavigationProp<any>;
-};
-
-export default function Home({ navigation }: Props) {
+export default function Home({ navigation }: any) {
     const [loading, setLoading] = useState(true);
     const [temMatilha, setTemMatilha] = useState(false);
+    
+    // Estados do Formulário (Sem usar o componente Modal)
+    const [formVisivel, setFormVisivel] = useState(false);
+    const [titulo, setTitulo] = useState('');
+    const [descricao, setDescricao] = useState('');
     
     const [xpTotal, setXpTotal] = useState(0);
     const [ofensivaTotal, setOfensivaTotal] = useState(0); 
@@ -167,6 +171,30 @@ export default function Home({ navigation }: Props) {
         setDiasOfensiva(dias);
     };
 
+    const handleCriarTarefa = async () => {
+        if (!titulo.trim() || !descricao.trim()) {
+            Alert.alert("Campos vazios", "O C# exige título e descrição para salvar!");
+            return;
+        }
+
+        const novaTarefaParaService = {
+            titulo: titulo.trim(),
+            descricao: descricao.trim(),
+            horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            xp: 15,
+            diaDaSemana: new Date().getDay(),
+            petId: petsDaMatilha[0]?.id || "0" 
+        };
+
+        await TaskService.adicionarTarefaMatilha(novaTarefaParaService);
+        setFormVisivel(false);
+        setTitulo('');
+        setDescricao('');
+        
+        const tarefasAtualizadas = await TaskService.carregarTarefasHoje();
+        setTarefas(tarefasAtualizadas);
+    };
+
     const alternarTarefaStatus = async (id: number) => {
         const tarefaClicada = tarefas.find(t => t.id === id);
         if (!tarefaClicada) return;
@@ -186,7 +214,6 @@ export default function Home({ navigation }: Props) {
         await registrarXPIndividual(mudancaXP);
     };
 
-    // Próxima tarefa pendente (primeira não concluída da lista)
     const proximaTarefaPendente = tarefas.find(t => !t.concluida) || null;
 
     if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#1CB0F6" /></View>;
@@ -253,6 +280,15 @@ export default function Home({ navigation }: Props) {
 
                 <StreakCard streakDays={diasOfensiva} totalStreak={ofensivaTotal} />
 
+                {/* Botão de Adicionar Tarefa */}
+                <TouchableOpacity 
+                    style={styles.btnCriar} 
+                    onPress={() => setFormVisivel(true)}
+                >
+                    <MaterialCommunityIcons name="plus-circle" size={24} color="#FFF" />
+                    <Text style={styles.btnCriarText}>Nova Tarefa do Dia</Text>
+                </TouchableOpacity>
+
                 <HighlightTaskCard 
                     tarefa={proximaTarefaPendente}
                     onComplete={alternarTarefaStatus}
@@ -267,17 +303,17 @@ export default function Home({ navigation }: Props) {
                         <View style={styles.emptyTasks}>
                             <MaterialCommunityIcons name="clipboard-text-outline" size={40} color="#CBD5E1" />
                             <Text style={styles.emptyTasksText}>Nenhuma tarefa cadastrada ainda.</Text>
-                            <Text style={styles.emptyTasksSubtext}>Adicione tarefas na aba Família!</Text>
+                            <Text style={styles.emptyTasksSubtext}>Adicione tarefas no botão acima!</Text>
                         </View>
                     ) : (
-                        tarefas.map((tarefa) => (
+                        tarefas.map((t) => (
                             <TaskItem 
-                                key={tarefa.id}
-                                id={tarefa.id}
-                                title={tarefa.titulo}
-                                time={tarefa.horario}
-                                xp={tarefa.xp}
-                                isDone={tarefa.concluida}
+                                key={t.id} 
+                                id={t.id}
+                                title={t.titulo}
+                                time={t.horario}
+                                xp={t.xp}
+                                isDone={t.concluida}
                                 onToggle={alternarTarefaStatus}
                             />
                         ))
@@ -289,6 +325,44 @@ export default function Home({ navigation }: Props) {
                 <HealthHistoryCard pets={petsDaMatilha} />
                 <View style={{ height: 130 }} />
             </ScrollView>
+
+            {formVisivel && (
+                <View style={styles.absoluteOverlay}>
+                    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'center' }}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalHeader}>O que faremos hoje?</Text>
+                            
+                            <TextInput 
+                                style={styles.inputModal} 
+                                placeholder="Título (Ex: Dar Remédio)" 
+                                maxLength={30} 
+                                value={titulo}
+                                onChangeText={setTitulo}
+                            />
+
+                            <TextInput 
+                                style={[styles.inputModal, { height: 80, textAlignVertical: 'top' }]} 
+                                placeholder="Descrição detalhada..." 
+                                maxLength={200} 
+                                multiline
+                                value={descricao}
+                                onChangeText={setDescricao}
+                            />
+
+                            <View style={styles.modalButtons}>
+                                <TouchableOpacity style={styles.btnCancelar} onPress={() => setFormVisivel(false)}>
+                                    <Text style={{color: '#64748B', fontWeight: 'bold'}}>Cancelar</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity style={styles.btnSalvar} onPress={handleCriarTarefa}>
+                                    <Text style={{color: '#FFF', fontWeight: 'bold'}}>Salvar Tarefa</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </KeyboardAvoidingView>
+                </View>
+            )}
+
             <StatusBar style="dark" />
         </View>
     );
@@ -312,4 +386,35 @@ const styles = StyleSheet.create({
     emptyTasks: { backgroundColor: '#FFF', borderRadius: 20, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', gap: 8 },
     emptyTasksText: { fontSize: 16, fontWeight: '600', color: '#94A3B8' },
     emptyTasksSubtext: { fontSize: 14, color: '#CBD5E1' },
+    
+    btnCriar: { 
+        backgroundColor: '#0066FF', 
+        flexDirection: 'row', 
+        padding: 16, 
+        borderRadius: 16, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        gap: 10,
+        elevation: 4
+    },
+    btnCriarText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+
+    absoluteOverlay: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'center',
+        padding: 20,
+        zIndex: 999,
+        elevation: 10,
+    },
+    modalContent: { backgroundColor: '#FFF', borderRadius: 24, padding: 25, elevation: 10 },
+    modalHeader: { fontSize: 20, fontWeight: 'bold', color: '#134879', marginBottom: 20, textAlign: 'center' },
+    inputModal: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 15, marginBottom: 15, color: '#333' },
+    modalButtons: { flexDirection: 'row', gap: 10 },
+    btnCancelar: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 12, backgroundColor: '#EDF2F7' },
+    btnSalvar: { flex: 1, padding: 15, alignItems: 'center', borderRadius: 12, backgroundColor: '#0066FF' }
 });
