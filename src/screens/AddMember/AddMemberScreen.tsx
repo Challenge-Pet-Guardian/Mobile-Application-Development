@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { STORAGE_KEYS } from '../../constants/Keys'; 
@@ -16,7 +16,7 @@ export default function AddMemberScreen({ navigation }: Props) {
 
   const salvar = async () => {
     if (!nome || !funcao) {
-      alert('Preencha tudo');
+      Alert.alert('Campos vazios', 'Por favor, preencha o nome e a função do familiar.');
       return;
     }
 
@@ -51,7 +51,7 @@ export default function AddMemberScreen({ navigation }: Props) {
         {(nome !== '' || funcao !== '') && (
           <View style={styles.previewContainer}>
             <Text style={styles.previewText}>
-              👀 Pré-visualização:{'\n'} 
+              Pré-visualização:{'\n'} 
               <Text style={{fontWeight: 'bold'}}>{nome ? nome : '???'}</Text> será adicionado(a) como <Text style={{fontWeight: 'bold'}}>{funcao ? funcao : '???'}</Text> da família!
             </Text>
           </View>
