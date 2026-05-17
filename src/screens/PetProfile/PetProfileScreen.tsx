@@ -148,14 +148,24 @@ export default function PetProfileScreen() {
 
         <View style={styles.carrosselContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.listaDePets}>
-            {meusPets.map((pet) => (
-              <TouchableOpacity key={pet.id ?? '0'} onPress={() => selecionarPet(pet)} style={styles.itemPetCarrossel}>
-                <View style={[styles.miniAvatarBorda, petAtualId === pet.id && styles.miniAvatarSelecionado]}>
-                  <Image source={AVATARES_DISPONIVEIS.find(a => a.id === pet.avatarId)?.imagem} style={styles.miniAvatarImg} />
-                </View>
-                <Text style={[styles.miniAvatarTexto, petAtualId === pet.id && styles.miniAvatarTextoSelecionado]}>{(pet.nome || '').split(' ')[0]}</Text>
-              </TouchableOpacity>
-            ))}
+            {meusPets.map((pet) => {
+              const avatarItem = AVATARES_DISPONIVEIS.find(a => a.id === pet.avatarId);
+              return (
+                <TouchableOpacity key={pet.id ?? '0'} onPress={() => selecionarPet(pet)} style={styles.itemPetCarrossel}>
+                  <View style={[styles.miniAvatarBorda, petAtualId === pet.id && styles.miniAvatarSelecionado]}>
+                    {avatarItem ? (
+                      <Image source={avatarItem.imagem} style={styles.miniAvatarImg} />
+                    ) : (
+                      <MaterialCommunityIcons name="paw" size={24} color="#A0AEC0" />
+                    )}
+                  </View>
+                  <Text style={[styles.miniAvatarTexto, petAtualId === pet.id && styles.miniAvatarTextoSelecionado]}>
+                    {(pet.nome || '').split(' ')[0]}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+            
             <TouchableOpacity onPress={prepararNovoPet} style={styles.itemPetCarrossel}>
               <View style={[styles.miniAvatarBorda, styles.botaoNovoPet, petAtualId === null && styles.miniAvatarSelecionado]}>
                 <MaterialCommunityIcons name="plus" size={30} color={petAtualId === null ? "#0066FF" : "#A0AEC0"} />
