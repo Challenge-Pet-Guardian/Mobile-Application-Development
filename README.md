@@ -16,8 +16,8 @@ O **PetGuardian** é um aplicativo mobile desenvolvido em **React Native com Exp
 
 - **Navegação entre telas:** React Navigation com Stack + Bottom Tabs, 9+ rotas navegáveis. ✅
 - **Protótipo visual funcional:** Telas refinadas, layout coerente e fluxos lógicos de uso. ✅
-- **Manipulação de Estado:** Formulários dinâmicos com useState para Login, Pets, Perfil e Mural. ✅
-- **Persistência Local:** Armazenamento avançado com AsyncStorage para Sessão, Pets e XP. ✅
+- **Manipulação de Estado:** Formulários dinâmicos com `useState` para Login, Register, Pets, Tarefas, Membros e Mural. ✅
+- **Persistência Local:** Armazenamento com AsyncStorage para sessão, pets, matilha, XP, ofensiva e tarefas. ✅
 - **Execução Nativa:** Testado e validado em dispositivo físico/emulador e não apenas Web. ✅
 
 ---
@@ -29,8 +29,8 @@ O aplicativo utiliza uma arquitetura de navegação híbrida para garantir a mel
 ```
 MainStack
 ├── Welcome       → Ponto de entrada com verificação automática de sessão
-├── Login         → Autenticação de usuário com validação de campos
-├── Register      → Cadastro de novos usuários e limpeza de dados residuais
+├── Login         → Autenticação de usuário com validação de campos (Zod)
+├── Register      → Cadastro de novos usuários com reset de sessão anterior no AsyncStorage
 └── Tabs (Navegação por Abas Inferiores)
     ├── 🏠 Home        → Painel principal com tarefas dinâmicas, streak e histórico clínico
     ├── 👨‍👩‍👧 Family      → FamilyStack (Gerenciamento de membros e Mural de Recados)
@@ -44,18 +44,25 @@ MainStack
 ## 📋 Funcionalidades Principais
 
 ### 🏠 Painel Home Inteligente
-- **Rotina Semanal Dinâmica:** As tarefas mudam automaticamente conforme o dia da semana.
-- **Sistema de XP & Ofensiva:** Ganho de pontos individuais e coletivos, com contador de dias seguidos (Streak).
-- **Histórico Clínico Resumido:** Visualização rápida de peso, última vacina e consulta de todos os pets.
+- **Rotina Semanal Dinâmica:** As tarefas são filtradas automaticamente pelo dia da semana via `TaskService`.
+- **Sistema de XP & Ofensiva:** Ganho de pontos individuais e coletivos ao concluir tarefas, com contador de dias seguidos (Streak).
+- **Histórico Clínico Resumido:** Visualização rápida de peso, última vacina e consulta de todos os pets da família.
+- **Criação de Tarefas:** Formulário inline com overlay para adicionar novas tarefas diretamente na Home.
 
 ### 👨‍👩‍👧 Gestão de Família (Family Pet)
-- **Colaboração Real:** Mural de recados com suporte a edição e exclusão de mensagens.
-- **Controle de Permissões:** Apenas o "Dono da Família" pode renomear o grupo.
-- **Sessão Automática:** O app identifica se você já pertence a uma família e recupera os dados no login.
+- **Criar ou Entrar:** O usuário pode criar uma nova família ou entrar em uma existente via código de convite.
+- **Colaboração Real:** Mural de recados com suporte a criação, edição e exclusão de mensagens.
+- **Controle de Permissões:** Apenas o "Dono da Família" pode renomear o grupo e remover membros.
+- **Sessão Automática:** O app identifica se o usuário já pertence a uma família e recupera os dados automaticamente.
 
 ### 🐶 Meu Pet
-- **Ficha Completa:** Cadastro de nome, raça, idade, peso, sexo, status de castração, vacinas e alergias.
-- **Multi-Pet:** Suporte para vários animais com carrossel de seleção e avatares customizados.
+- **Ficha Completa:** Cadastro de nome, raça, idade, peso, sexo, castração, vacinas, consultas, veterinário, alergias e medicamentos.
+- **Multi-Pet:** Suporte para vários animais com carrossel de seleção e avatares customizados (cachorro, gato, coelho).
+
+### 👤 Perfil do Usuário
+- **Ranking Individual:** Posição do usuário dentro da família com base no XP acumulado.
+- **Edição de Perfil:** Modal com validação Zod que atualiza o nome em todas as referências do AsyncStorage (cuidadores e recados).
+- **FAQ e Suporte:** Modais de perguntas frequentes e envio de feedback para a equipe.
 
 ---
 
@@ -67,7 +74,8 @@ MainStack
 | Expo | Plataforma de desenvolvimento e execução nativa |
 | React Navigation | Navegação entre telas (Stack e Tabs) |
 | AsyncStorage | Banco de dados local para persistência de informações |
-| Reanimated 3 | Animações suaves de interface (FadeIn, Zoom) |
+| Zod | Validação de formulários (Login, Register e edição de perfil) |
+| Reanimated 3 | Animações suaves de interface (FadeInDown, ZoomIn) |
 | @expo/vector-icons | Biblioteca de ícones vetoriais |
 
 ---
@@ -77,10 +85,17 @@ MainStack
 | Chave | Conteúdo |
 |-------|----------|
 | `@PetGuardian_UserData` | Dados da conta (Nome, E-mail, Senha) |
+| `@PetGuardian_Logado` | Status da sessão ativa |
 | `@PetGuardian_ListaPets` | Lista de todos os animais cadastrados |
 | `@Matilha_Cuidadores` | Membros da família e seus respectivos XPs |
 | `@Matilha_Recados` | Conteúdo do mural colaborativo |
+| `@PetGuardian_MatilhaAtiva` | Se o usuário pertence a uma família |
+| `@PetGuardian_NomeMatilha` | Nome da família |
+| `@PetGuardian_CodigoMatilha` | Código de convite gerado |
+| `@PetGuardian_PontosXP` | XP total acumulado pelo usuário |
 | `@PetGuardian_OfensivaDias` | Contador de dias consecutivos de cuidado |
+| `@PetGuardian_MatilhaTarefas` | Tarefas criadas para a matilha |
+| `@PetGuardian_Progresso_<data>` | Progresso diário das tarefas (reset automático) |
 
 ---
 
