@@ -44,13 +44,14 @@ export default function LoginScreen({ navigation }: Props) {
     }
 
     try {
-      
       const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
       
       if (userDataString) {
         const userData = JSON.parse(userDataString);
         
         if (userData.email === email && userData.senha === senha) {
+          // Grava o estado de login ativo para o F5 funcionar
+          await AsyncStorage.setItem(STORAGE_KEYS.LOGADO, 'sim');
           navigation.navigate('Tabs'); 
         } else {
           Alert.alert('Erro', 'E-mail ou senha incorretos.');
@@ -153,10 +154,8 @@ const styles = StyleSheet.create({
   },
   inputLabel: { fontSize: 14, fontWeight: '600', color: '#4A5568', marginBottom: 8, marginLeft: 4 },
   input: { backgroundColor: '#F7FAFC', borderWidth: 1, borderColor: '#E2E8F0', padding: 16, borderRadius: 16, marginBottom: 20, fontSize: 16, color: '#2D3748' },
-  
   inputErro: { borderColor: '#E53E3E', borderWidth: 1.5, backgroundColor: '#FFF5F5' },
   erroTexto: { color: '#E53E3E', fontSize: 12, marginTop: -15, marginBottom: 15, marginLeft: 8, fontWeight: '500' },
-  
   button: { backgroundColor: '#0066FF', paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginTop: 10 },
   buttonShadow: {
     shadowColor: '#0066FF',
