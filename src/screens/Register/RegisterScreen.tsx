@@ -48,7 +48,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
     try {
       await AsyncStorage.removeItem(STORAGE_KEYS.USER_DATA);
-      await AsyncStorage.removeItem(STORAGE_KEYS.MATILHA_ATIVA);
+      await AsyncStorage.removeItem(STORAGE_KEYS.FAMILIA_ATIVA);
 
       const userData = { nome, email, senha };
       

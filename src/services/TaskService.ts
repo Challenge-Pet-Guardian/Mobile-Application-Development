@@ -3,9 +3,9 @@ import { Tarefa } from '../types/models';
 import { STORAGE_KEYS } from '../constants/Keys';
 
 export const TaskService = {
-    /** Retorna todas as tarefas da matilha (mock das tarefas que viriam da API/Firebase) */
+    /** Retorna todas as tarefas da Familia (mock das tarefas que viriam da API/Firebase) */
     async getTodasAsTarefas(): Promise<Tarefa[]> {
-        const tarefasStr = await AsyncStorage.getItem(STORAGE_KEYS.MATILHA_TAREFAS);
+        const tarefasStr = await AsyncStorage.getItem(STORAGE_KEYS.FAMILIA_TAREFAS);
         if (!tarefasStr) {
             return [];
         }
@@ -18,8 +18,8 @@ export const TaskService = {
         return todas.filter(t => t.diaDaSemana === diaDaSemana);
     },
 
-    /** Adiciona uma nova tarefa à matilha (que aparecerá para todos os membros) */
-    async adicionarTarefaMatilha(novaTarefa: Omit<Tarefa, 'id' | 'concluida'>): Promise<void> {
+    /** Adiciona uma nova tarefa à Familia (que aparecerá para todos os membros) */
+    async adicionarTarefaFamilia(novaTarefa: Omit<Tarefa, 'id' | 'concluida'>): Promise<void> {
         const todas = await this.getTodasAsTarefas();
         const maxId = todas.length > 0 ? Math.max(...todas.map(t => t.id)) : 0;
         
@@ -29,9 +29,9 @@ export const TaskService = {
             concluida: false
         };
 
-        // 1. Salva na "lista mãe" da Matilha
+        // 1. Salva na "lista mãe" da Familia
         const novasTarefas = [...todas, tarefaCriada];
-        await AsyncStorage.setItem(STORAGE_KEYS.MATILHA_TAREFAS, JSON.stringify(novasTarefas));
+        await AsyncStorage.setItem(STORAGE_KEYS.FAMILIA_TAREFAS, JSON.stringify(novasTarefas));
 
         // 2. Tenta salvar na cópia de progresso de HOJE (para aparecer no ecrã na hora!)
         const dataHoje = new Date().toDateString();

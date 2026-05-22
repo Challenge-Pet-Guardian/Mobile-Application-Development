@@ -23,7 +23,7 @@ import { getAvatarById } from '../../constants/Avatares';
 
 export default function Home({ navigation }: any) {
     const [loading, setLoading] = useState(true);
-    const [temMatilha, setTemMatilha] = useState(false);
+    const [temFamilia, setTemFamilia] = useState(false);
     
     // Estados do Formulário (Sem usar o componente Modal)
     const [formVisivel, setFormVisivel] = useState(false);
@@ -33,7 +33,7 @@ export default function Home({ navigation }: any) {
     const [xpTotal, setXpTotal] = useState(0);
     const [ofensivaTotal, setOfensivaTotal] = useState(0); 
     const [householdName, setHouseholdName] = useState('Minha Família'); 
-    const [petsDaMatilha, setPetsDaMatilha] = useState<Pet[]>([]);
+    const [petsDaFamilia, setPetsDaFamilia] = useState<Pet[]>([]);
 
     const [tarefas, setTarefas] = useState<Tarefa[]>([]);
     const [diasOfensiva, setDiasOfensiva] = useState<DiaOfensiva[]>([]);
@@ -60,31 +60,31 @@ export default function Home({ navigation }: any) {
                 usuarioEstaNaLista = lista.some((c: any) => c.nome.replace(' (Você)', '').trim() === meuNome);
             }
 
-            let matilhaAtiva = await AsyncStorage.getItem(STORAGE_KEYS.MATILHA_ATIVA);
+            let FamiliaAtiva = await AsyncStorage.getItem(STORAGE_KEYS.FAMILIA_ATIVA);
             
-            if (usuarioEstaNaLista && matilhaAtiva !== 'sim') {
-                await AsyncStorage.setItem(STORAGE_KEYS.MATILHA_ATIVA, 'sim');
-                matilhaAtiva = 'sim';
-            } else if (!usuarioEstaNaLista && matilhaAtiva === 'sim') {
-                await AsyncStorage.setItem(STORAGE_KEYS.MATILHA_ATIVA, 'nao');
-                matilhaAtiva = 'nao';
+            if (usuarioEstaNaLista && FamiliaAtiva !== 'sim') {
+                await AsyncStorage.setItem(STORAGE_KEYS.FAMILIA_ATIVA, 'sim');
+                FamiliaAtiva = 'sim';
+            } else if (!usuarioEstaNaLista && FamiliaAtiva === 'sim') {
+                await AsyncStorage.setItem(STORAGE_KEYS.FAMILIA_ATIVA, 'nao');
+                FamiliaAtiva = 'nao';
             }
 
-            if (matilhaAtiva !== 'sim') {
-                setTemMatilha(false);
+            if (FamiliaAtiva !== 'sim') {
+                setTemFamilia(false);
                 setLoading(false);
                 return;
             }
             
-            setTemMatilha(true);
+            setTemFamilia(true);
 
-            const nomeCasaSalvo = await AsyncStorage.getItem(STORAGE_KEYS.NOME_MATILHA);
+            const nomeCasaSalvo = await AsyncStorage.getItem(STORAGE_KEYS.NOME_FAMILIA);
             if (nomeCasaSalvo) setHouseholdName(nomeCasaSalvo);
 
-            const matilhaStr = await AsyncStorage.getItem(STORAGE_KEYS.LISTA_PETS);
-            let matilhaArray: Pet[] = [];
-            if (matilhaStr) matilhaArray = JSON.parse(matilhaStr);
-            setPetsDaMatilha(matilhaArray);
+            const FamiliaStr = await AsyncStorage.getItem(STORAGE_KEYS.LISTA_PETS);
+            let FamiliaArray: Pet[] = [];
+            if (FamiliaStr) FamiliaArray = JSON.parse(FamiliaStr);
+            setPetsDaFamilia(FamiliaArray);
 
             const pontosSalvos = await AsyncStorage.getItem(STORAGE_KEYS.PONTOS_XP);
             if (pontosSalvos) setXpTotal(Number(pontosSalvos));
@@ -183,10 +183,10 @@ export default function Home({ navigation }: any) {
             horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
             xp: 15,
             diaDaSemana: new Date().getDay(),
-            petId: petsDaMatilha[0]?.id || "0" 
+            petId: petsDaFamilia[0]?.id || "0" 
         };
 
-        await TaskService.adicionarTarefaMatilha(novaTarefaParaService);
+        await TaskService.adicionarTarefaFamilia(novaTarefaParaService);
         setFormVisivel(false);
         setTitulo('');
         setDescricao('');
@@ -218,7 +218,7 @@ export default function Home({ navigation }: any) {
 
     if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#1CB0F6" /></View>;
 
-    if (!temMatilha) {
+    if (!temFamilia) {
         return (
             <View style={styles.container}>
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -227,8 +227,8 @@ export default function Home({ navigation }: any) {
                         iconName="home-group"
                         iconColor="#1CB0F6"
                         title="Bem-vindo ao PetGuardian!"
-                        description="Para ver as tarefas do dia, você precisa de uma matilha."
-                        buttonText="Criar ou Entrar numa Matilha"
+                        description="Para ver as tarefas do dia, você precisa de uma Familia."
+                        buttonText="Criar ou Entrar numa Familia"
                         onButtonPress={() => navigation.navigate('Family')}
                     />
                 </ScrollView>
@@ -237,7 +237,7 @@ export default function Home({ navigation }: any) {
         );
     }
 
-    if (temMatilha && petsDaMatilha.length === 0) {
+    if (temFamilia && petsDaFamilia.length === 0) {
         return (
             <View style={styles.container}>
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -245,7 +245,7 @@ export default function Home({ navigation }: any) {
                     <EmptyState 
                         iconName="dog"
                         iconColor="#FF9600"
-                        title="Matilha Pronta!"
+                        title="Familia Pronta!"
                         description="Cadastre o seu primeiro pet para liberar o painel de tarefas!"
                         buttonText="Cadastrar meu Pet"
                         buttonColor="#FF9600"
@@ -262,12 +262,12 @@ export default function Home({ navigation }: any) {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 <Header title="Home" />
                 <View style={styles.petProfileContainer}>
-                    <View style={styles.matilhaAvatars}>
-                        {petsDaMatilha.slice(0, 2).map((pet, index) => {
+                    <View style={styles.FamiliaAvatars}>
+                        {petsDaFamilia.slice(0, 2).map((pet, index) => {
                             const imagemCerta = getAvatarById(pet.avatarId);
                             return (
                                 <View key={pet.id ?? index.toString()} style={[styles.avatarWrapper, index === 1 && { marginLeft: -35, zIndex: 1 }]}>
-                                    {imagemCerta ? <Image source={imagemCerta} style={styles.avatarImageMatilha} /> : <View style={styles.avatarPlaceholder}><MaterialCommunityIcons name="paw" size={30} color="#A0AEC0" /></View>}
+                                    {imagemCerta ? <Image source={imagemCerta} style={styles.avatarImageFamilia} /> : <View style={styles.avatarPlaceholder}><MaterialCommunityIcons name="paw" size={30} color="#A0AEC0" /></View>}
                                 </View>
                             );
                         })}
@@ -322,7 +322,7 @@ export default function Home({ navigation }: any) {
 
                 <TipCard text="Variar as atividades estimula a inteligência do seu pet." />
 
-                <HealthHistoryCard pets={petsDaMatilha} />
+                <HealthHistoryCard pets={petsDaFamilia} />
                 <View style={{ height: 130 }} />
             </ScrollView>
 
@@ -372,9 +372,9 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F4F7FA', paddingTop: Platform.OS === 'ios' ? 50 : 30 },
     scrollContent: { padding: 24, gap: 20 },
     petProfileContainer: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 5, marginBottom: 10 },
-    matilhaAvatars: { flexDirection: 'row', width: 95 },
+    FamiliaAvatars: { flexDirection: 'row', width: 95 },
     avatarWrapper: { zIndex: 2, borderRadius: 35, borderWidth: 3, borderColor: '#FFF', backgroundColor: '#FFF' },
-    avatarImageMatilha: { width: 64, height: 64, borderRadius: 32 },
+    avatarImageFamilia: { width: 64, height: 64, borderRadius: 32 },
     avatarPlaceholder: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', backgroundColor: '#EDF2F7' },
     petInfoContainer: { flex: 1, justifyContent: 'center' },
     petName: { fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 4 },

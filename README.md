@@ -17,7 +17,7 @@ O **PetGuardian** é um aplicativo mobile desenvolvido em **React Native com Exp
 - **Navegação entre telas:** React Navigation com Stack + Bottom Tabs, 9+ rotas navegáveis. ✅
 - **Protótipo visual funcional:** Telas refinadas, layout coerente e fluxos lógicos de uso. ✅
 - **Manipulação de Estado:** Formulários dinâmicos com `useState` para Login, Register, Pets, Tarefas, Membros e Mural. ✅
-- **Persistência Local:** Armazenamento com AsyncStorage para sessão, pets, matilha, XP, ofensiva e tarefas. ✅
+- **Persistência Local:** Armazenamento com AsyncStorage para sessão, pets, Familia, XP, ofensiva e tarefas. ✅
 - **Execução Nativa:** Testado e validado em dispositivo físico/emulador e não apenas Web. ✅
 
 ---
@@ -87,14 +87,14 @@ MainStack
 | `@PetGuardian_UserData` | Dados da conta (Nome, E-mail, Senha) |
 | `@PetGuardian_Logado` | Status da sessão ativa |
 | `@PetGuardian_ListaPets` | Lista de todos os animais cadastrados |
-| `@Matilha_Cuidadores` | Membros da família e seus respectivos XPs |
-| `@Matilha_Recados` | Conteúdo do mural colaborativo |
-| `@PetGuardian_MatilhaAtiva` | Se o usuário pertence a uma família |
-| `@PetGuardian_NomeMatilha` | Nome da família |
-| `@PetGuardian_CodigoMatilha` | Código de convite gerado |
+| `@Familia_Cuidadores` | Membros da família e seus respectivos XPs |
+| `@Familia_Recados` | Conteúdo do mural colaborativo |
+| `@PetGuardian_FamiliaAtiva` | Se o usuário pertence a uma família |
+| `@PetGuardian_NomeFamilia` | Nome da família |
+| `@PetGuardian_CodigoFamilia` | Código de convite gerado |
 | `@PetGuardian_PontosXP` | XP total acumulado pelo usuário |
 | `@PetGuardian_OfensivaDias` | Contador de dias consecutivos de cuidado |
-| `@PetGuardian_MatilhaTarefas` | Tarefas criadas para a matilha |
+| `@PetGuardian_FamiliaTarefas` | Tarefas criadas para a Familia |
 | `@PetGuardian_Progresso_<data>` | Progresso diário das tarefas (reset automático) |
 
 ---

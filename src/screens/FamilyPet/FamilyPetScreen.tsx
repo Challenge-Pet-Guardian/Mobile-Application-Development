@@ -14,18 +14,18 @@ import { AVATARES_DISPONIVEIS } from '../../constants/Avatares';
 type Props = { navigation: NativeStackNavigationProp<any>; };
 
 export default function FamilyPetScreen({ navigation }: Props) {
-  const [temMatilha, setTemMatilha] = useState(false);
+  const [temFamilia, setTemFamilia] = useState(false);
   const [fluxoAberto, setFluxoAberto] = useState<'nenhum' | 'criando' | 'entrando'>('nenhum');
-  const [nomeMatilha, setNomeMatilha] = useState('');
+  const [nomeFamilia, setNomeFamilia] = useState('');
   const [codigoConvite, setCodigoConvite] = useState('');
   const [minhaFuncao, setMinhaFuncao] = useState('');
   
-  const [codigoMatilhaAtiva, setCodigoMatilhaAtiva] = useState('');
-  const [nomeDaMatilhaAtual, setNomeDaMatilhaAtual] = useState('Family Pet'); 
+  const [codigoFamiliaAtiva, setCodigoFamiliaAtiva] = useState('');
+  const [nomeDaFamiliaAtual, setNomeDaFamiliaAtual] = useState('Family Pet'); 
 
   const [cuidadores, setCuidadores] = useState<Cuidador[]>([]);
   const [recados, setRecados] = useState<Recado[]>([]);
-  const [petsDaMatilha, setPetsDaMatilha] = useState<Pet[]>([]); 
+  const [petsDaFamilia, setPetsDaFamilia] = useState<Pet[]>([]); 
 
   const [novoRecado, setNovoRecado] = useState('');
   const [usuarioLogado, setUsuarioLogado] = useState('Tutor');
@@ -44,11 +44,11 @@ export default function FamilyPetScreen({ navigation }: Props) {
         if (conta.nome) { nomeUsuarioAtual = conta.nome; setUsuarioLogado(conta.nome); }
       }
 
-      const nomeSalvo = await AsyncStorage.getItem(STORAGE_KEYS.NOME_MATILHA);
-      if (nomeSalvo) setNomeDaMatilhaAtual(nomeSalvo);
+      const nomeSalvo = await AsyncStorage.getItem(STORAGE_KEYS.NOME_FAMILIA);
+      if (nomeSalvo) setNomeDaFamiliaAtual(nomeSalvo);
 
       const petsSalvos = await AsyncStorage.getItem(STORAGE_KEYS.LISTA_PETS);
-      if (petsSalvos) setPetsDaMatilha(JSON.parse(petsSalvos));
+      if (petsSalvos) setPetsDaFamilia(JSON.parse(petsSalvos));
 
       let listaCuidadores: Cuidador[] = [];
       const dadosCuidadores = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
@@ -57,39 +57,39 @@ export default function FamilyPetScreen({ navigation }: Props) {
       const dadosRecados = await AsyncStorage.getItem(STORAGE_KEYS.RECADOS);
       if (dadosRecados) setRecados(JSON.parse(dadosRecados));
 
-      let matilhaSalva = await AsyncStorage.getItem(STORAGE_KEYS.MATILHA_ATIVA);
+      let FamiliaSalva = await AsyncStorage.getItem(STORAGE_KEYS.FAMILIA_ATIVA);
       const usuarioEstaNaLista = listaCuidadores.some(c => c.nome.replace(' (Você)', '').trim() === nomeUsuarioAtual.trim());
 
-      if (usuarioEstaNaLista && matilhaSalva !== 'sim') {
-          await AsyncStorage.setItem(STORAGE_KEYS.MATILHA_ATIVA, 'sim');
-          matilhaSalva = 'sim';
-      } else if (!usuarioEstaNaLista && matilhaSalva === 'sim') {
-          await AsyncStorage.setItem(STORAGE_KEYS.MATILHA_ATIVA, 'nao');
-          matilhaSalva = 'nao';
+      if (usuarioEstaNaLista && FamiliaSalva !== 'sim') {
+          await AsyncStorage.setItem(STORAGE_KEYS.FAMILIA_ATIVA, 'sim');
+          FamiliaSalva = 'sim';
+      } else if (!usuarioEstaNaLista && FamiliaSalva === 'sim') {
+          await AsyncStorage.setItem(STORAGE_KEYS.FAMILIA_ATIVA, 'nao');
+          FamiliaSalva = 'nao';
       }
 
-      let codigoSalvo = await AsyncStorage.getItem(STORAGE_KEYS.CODIGO_MATILHA);
+      let codigoSalvo = await AsyncStorage.getItem(STORAGE_KEYS.CODIGO_FAMILIA);
       
-      if (matilhaSalva === 'sim' && !codigoSalvo) {
+      if (FamiliaSalva === 'sim' && !codigoSalvo) {
         codigoSalvo = `PET-${Math.floor(1000 + Math.random() * 9000)}`;
-        await AsyncStorage.setItem(STORAGE_KEYS.CODIGO_MATILHA, codigoSalvo);
+        await AsyncStorage.setItem(STORAGE_KEYS.CODIGO_FAMILIA, codigoSalvo);
       }
 
-      if (codigoSalvo) setCodigoMatilhaAtiva(codigoSalvo);
+      if (codigoSalvo) setCodigoFamiliaAtiva(codigoSalvo);
       
-      setTemMatilha(matilhaSalva === 'sim' && usuarioEstaNaLista ? true : false);
+      setTemFamilia(FamiliaSalva === 'sim' && usuarioEstaNaLista ? true : false);
     } catch (error) { console.log(error); }
   };
 
   useFocusEffect(useCallback(() => { carregarDados(); }, []));
 
-  const finalizarAcaoMatilha = async () => {
-    if (fluxoAberto === 'criando' && nomeMatilha.trim() === '') return;
+  const finalizarAcaoFamilia = async () => {
+    if (fluxoAberto === 'criando' && nomeFamilia.trim() === '') return;
     if (fluxoAberto === 'entrando' && (codigoConvite.trim() === '' || minhaFuncao.trim() === '')) return;
 
     if (fluxoAberto === 'entrando') {
-      const codigoRealDaMatilha = await AsyncStorage.getItem(STORAGE_KEYS.CODIGO_MATILHA);
-      if (codigoConvite.toUpperCase() !== codigoRealDaMatilha) {
+      const codigoRealDaFamilia = await AsyncStorage.getItem(STORAGE_KEYS.CODIGO_FAMILIA);
+      if (codigoConvite.toUpperCase() !== codigoRealDaFamilia) {
         if (Platform.OS === 'web') window.alert('Código Inválido 🚫\nNão encontramos nenhuma família com esse código.');
         else Alert.alert('Código Inválido 🚫', 'Não encontramos nenhuma família com esse código.');
         return; 
@@ -112,8 +112,8 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
     if (fluxoAberto === 'criando') {
       novaListaCuidadores = [];
-      await AsyncStorage.setItem(STORAGE_KEYS.NOME_MATILHA, nomeMatilha);
-      setNomeDaMatilhaAtual(nomeMatilha);
+      await AsyncStorage.setItem(STORAGE_KEYS.NOME_FAMILIA, nomeFamilia);
+      setNomeDaFamiliaAtual(nomeFamilia);
       setRecados([]); 
       await AsyncStorage.removeItem(STORAGE_KEYS.RECADOS);
     }
@@ -127,24 +127,24 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
     if (fluxoAberto === 'criando') {
       const codigoFinal = `PET-${Math.floor(1000 + Math.random() * 9000)}`;
-      await AsyncStorage.setItem(STORAGE_KEYS.CODIGO_MATILHA, codigoFinal);
-      setCodigoMatilhaAtiva(codigoFinal);
+      await AsyncStorage.setItem(STORAGE_KEYS.CODIGO_FAMILIA, codigoFinal);
+      setCodigoFamiliaAtiva(codigoFinal);
     } else {
-      setCodigoMatilhaAtiva(codigoConvite.toUpperCase());
+      setCodigoFamiliaAtiva(codigoConvite.toUpperCase());
     }
 
-    await AsyncStorage.setItem(STORAGE_KEYS.MATILHA_ATIVA, 'sim');
-    setTemMatilha(true); setFluxoAberto('nenhum'); setMinhaFuncao(''); setCodigoConvite(''); setNomeMatilha('');
+    await AsyncStorage.setItem(STORAGE_KEYS.FAMILIA_ATIVA, 'sim');
+    setTemFamilia(true); setFluxoAberto('nenhum'); setMinhaFuncao(''); setCodigoConvite(''); setNomeFamilia('');
   };
 
-  const sairMatilha = async () => {
+  const sairFamilia = async () => {
     const novaLista = cuidadores.filter(c => c.nome.replace(' (Você)', '') !== usuarioLogado);
     setCuidadores(novaLista);
     await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(novaLista));
-    await AsyncStorage.removeItem(STORAGE_KEYS.MATILHA_ATIVA);
-    await AsyncStorage.removeItem(STORAGE_KEYS.CODIGO_MATILHA);
+    await AsyncStorage.removeItem(STORAGE_KEYS.FAMILIA_ATIVA);
+    await AsyncStorage.removeItem(STORAGE_KEYS.CODIGO_FAMILIA);
     if (novaLista.length === 0) { await AsyncStorage.removeItem(STORAGE_KEYS.RECADOS); setRecados([]); }
-    setTemMatilha(false);
+    setTemFamilia(false);
   };
 
   const removerCuidador = async (id: string) => {
@@ -176,14 +176,14 @@ export default function FamilyPetScreen({ navigation }: Props) {
   const removerRecado = async (id: string) => { const novaLista = recados.filter(r => r.id !== id); setRecados(novaLista); await AsyncStorage.setItem(STORAGE_KEYS.RECADOS, JSON.stringify(novaLista)); };
   const getInitials = (name: string) => { if (!name) return '??'; return name.replace(' (Você)', '').substring(0, 2).toUpperCase(); };
 
-  const alterarNomeMatilha = async () => {
+  const alterarNomeFamilia = async () => {
     if (inputNovoNome.trim() === '') return;
-    await AsyncStorage.setItem(STORAGE_KEYS.NOME_MATILHA, inputNovoNome);
-    setNomeDaMatilhaAtual(inputNovoNome);
+    await AsyncStorage.setItem(STORAGE_KEYS.NOME_FAMILIA, inputNovoNome);
+    setNomeDaFamiliaAtual(inputNovoNome);
     setModalNomeAberto(false);
   };
 
-  if (!temMatilha) {
+  if (!temFamilia) {
     return (
       <View style={styles.container}>
         <View style={{ paddingTop: Platform.OS === 'ios' ? 50 : 30, paddingHorizontal: 20 }}>
@@ -210,17 +210,17 @@ export default function FamilyPetScreen({ navigation }: Props) {
                 {fluxoAberto === 'criando' ? 'Nome da Família' : 'Entrar na Família'}
               </Text>
               
-              <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' }} placeholder={fluxoAberto === 'criando' ? "Ex: Casa do Carlos" : "Código de Convite (Ex: PET-777)"} placeholderTextColor="#999" value={fluxoAberto === 'criando' ? nomeMatilha : codigoConvite} onChangeText={fluxoAberto === 'criando' ? setNomeMatilha : setCodigoConvite} />
+              <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' }} placeholder={fluxoAberto === 'criando' ? "Ex: Casa do Carlos" : "Código de Convite (Ex: PET-777)"} placeholderTextColor="#999" value={fluxoAberto === 'criando' ? nomeFamilia : codigoConvite} onChangeText={fluxoAberto === 'criando' ? setNomeFamilia : setCodigoConvite} />
 
               {fluxoAberto === 'entrando' && (
                 <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' }} placeholder="Sua função (ex: Veterinário, Tio...)" placeholderTextColor="#999" value={minhaFuncao} onChangeText={setMinhaFuncao} />
               )}
 
-              <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 }} onPress={finalizarAcaoMatilha}>
+              <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 }} onPress={finalizarAcaoFamilia}>
                 <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Confirmar</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => { setFluxoAberto('nenhum'); setMinhaFuncao(''); setCodigoConvite(''); setNomeMatilha(''); }}>
+              <TouchableOpacity onPress={() => { setFluxoAberto('nenhum'); setMinhaFuncao(''); setCodigoConvite(''); setNomeFamilia(''); }}>
                 <Text style={{ color: '#666', fontSize: 14, textAlign: 'center', textDecorationLine: 'underline' }}>Voltar</Text>
               </TouchableOpacity>
             </View>
@@ -238,15 +238,15 @@ export default function FamilyPetScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         
         <View style={{ paddingTop: Platform.OS === 'ios' ? 30 : 10, paddingBottom: 10 }}>
-            <Header title={nomeDaMatilhaAtual}/>
+            <Header title={nomeDaFamiliaAtual}/>
         </View>
 
         <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 10 }}>Nossos Animais</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 25 }}>
-          {petsDaMatilha.length === 0 ? (
+          {petsDaFamilia.length === 0 ? (
             <Text style={{ color: '#999', fontStyle: 'italic' }}>Nenhum pet cadastrado no Perfil ainda.</Text>
           ) : (
-            petsDaMatilha.map(pet => (
+            petsDaFamilia.map(pet => (
               <View key={pet.id} style={{ alignItems: 'center', marginRight: 15 }}>
                 <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#0066FF', overflow: 'hidden' }}>
                    {AVATARES_DISPONIVEIS.find(a => a.id === pet.avatarId) ? (
@@ -264,7 +264,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A' }}>Canto da Família</Text>
           {souDono && (
-            <TouchableOpacity onPress={() => { setInputNovoNome(nomeDaMatilhaAtual); setModalNomeAberto(true); }} style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => { setInputNovoNome(nomeDaFamiliaAtual); setModalNomeAberto(true); }} style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="pencil" size={16} color="#0066FF" />
               <Text style={{ color: '#0066FF', fontWeight: 'bold', marginLeft: 4, fontSize: 14 }}>Renomear</Text>
             </TouchableOpacity>
@@ -334,7 +334,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <TouchableOpacity onPress={sairMatilha} style={{ marginTop: 30 }}>
+        <TouchableOpacity onPress={sairFamilia} style={{ marginTop: 30 }}>
            <Text style={{ textAlign: 'center', color: '#FF3B30', fontWeight: 'bold', fontSize: 14 }}>Sair da Família</Text>
         </TouchableOpacity>
 
@@ -345,7 +345,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
           <View style={{ width: '100%', backgroundColor: '#FFF', borderRadius: 20, padding: 24, elevation: 10 }}>
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 }}>Renomear Família</Text>
             <TextInput style={{ borderWidth: 1, borderColor: '#EAEAEA', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#FAFAFA' }} placeholder="Novo nome da família..." placeholderTextColor="#999" value={inputNovoNome} onChangeText={setInputNovoNome} />
-            <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 }} onPress={alterarNomeMatilha}>
+            <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 }} onPress={alterarNomeFamilia}>
               <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Salvar</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setModalNomeAberto(false)}>
@@ -361,7 +361,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 20 }}>Convite da Família</Text>
             <Text style={{ textAlign: 'center', marginBottom: 20, color: '#666' }}>Compartilhe o código abaixo com seus familiares!</Text>
             <View style={{ backgroundColor: '#F0F8FF', padding: 20, borderRadius: 12, alignItems: 'center', marginBottom: 25, borderWidth: 1, borderColor: '#0066FF', borderStyle: 'dashed' }}>
-              <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0066FF', letterSpacing: 2 }}>{codigoMatilhaAtiva}</Text>
+              <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0066FF', letterSpacing: 2 }}>{codigoFamiliaAtiva}</Text>
             </View>
             <TouchableOpacity style={{ backgroundColor: '#0066FF', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 15 }} onPress={() => setCaixaConviteVisivel(false)}>
               <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Fechar</Text>

@@ -10,7 +10,7 @@ import { z } from 'zod';
 export default function UserProfileScreen({ navigation }: any) {
   const [nome, setNome] = useState('Carregando...');
   const [email, setEmail] = useState('');
-  const [emMatilha, setEmMatilha] = useState(false);
+  const [emFamilia, setEmFamilia] = useState(false);
   const [xp, setXp] = useState(0); 
   const [streak, setStreak] = useState(0); 
   const [meuRank, setMeuRank] = useState('---');
@@ -51,14 +51,14 @@ export default function UserProfileScreen({ navigation }: any) {
         setConfirmarEditSenha(userData.senha || '');
       }
 
-      const matilhaAtiva = await AsyncStorage.getItem(STORAGE_KEYS.MATILHA_ATIVA);
-      setEmMatilha(matilhaAtiva === 'sim');
+      const FamiliaAtiva = await AsyncStorage.getItem(STORAGE_KEYS.FAMILIA_ATIVA);
+      setEmFamilia(FamiliaAtiva === 'sim');
 
       const ofensivaSalva = await AsyncStorage.getItem(STORAGE_KEYS.OFENSIVA_DIAS);
       if (ofensivaSalva) setStreak(Number(ofensivaSalva));
 
       const cuidadoresString = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
-      if (cuidadoresString && matilhaAtiva === 'sim') {
+      if (cuidadoresString && FamiliaAtiva === 'sim') {
         const listaCuidadores = JSON.parse(cuidadoresString);
         
         const meuPerfil = listaCuidadores.find((c: any) => c.nome.replace(' (Você)', '').trim() === nomeUsuario.trim());
@@ -189,13 +189,13 @@ export default function UserProfileScreen({ navigation }: any) {
         </View>
 
         <View style={styles.statsRow}>
-          <StatCard icon="fire" label="Ofensiva" value={emMatilha ? `${streak} dias` : '0 dias'} color={emMatilha ? "#FF9600" : "#A0AEC0"} />
-          <StatCard icon="star" label="Meu XP" value={emMatilha ? xp : '0'} color={emMatilha ? "#1CB0F6" : "#A0AEC0"} />
-          <StatCard icon="medal" label="Ranking" value={emMatilha ? meuRank : "---"} color={emMatilha ? "#58CC02" : "#A0AEC0"} />
+          <StatCard icon="fire" label="Ofensiva" value={emFamilia ? `${streak} dias` : '0 dias'} color={emFamilia ? "#FF9600" : "#A0AEC0"} />
+          <StatCard icon="star" label="Meu XP" value={emFamilia ? xp : '0'} color={emFamilia ? "#1CB0F6" : "#A0AEC0"} />
+          <StatCard icon="medal" label="Ranking" value={emFamilia ? meuRank : "---"} color={emFamilia ? "#58CC02" : "#A0AEC0"} />
         </View>
 
-        {!emMatilha && (
-          <Text style={styles.avisoSemMatilha}>Entre ou crie uma família para começar a ganhar pontos!</Text>
+        {!emFamilia && (
+          <Text style={styles.avisoSemFamilia}>Entre ou crie uma família para começar a ganhar pontos!</Text>
         )}
 
         <View style={styles.menuContainer}>
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   userName: { fontSize: 24, fontWeight: 'bold', color: '#1A202C', marginTop: 15 },
   userEmail: { fontSize: 15, color: '#718096', marginTop: 4 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: 25 },
-  avisoSemMatilha: { textAlign: 'center', color: '#718096', fontSize: 13, marginTop: 15, paddingHorizontal: 40 },
+  avisoSemFamilia: { textAlign: 'center', color: '#718096', fontSize: 13, marginTop: 15, paddingHorizontal: 40 },
   menuContainer: { marginTop: 35, paddingHorizontal: 20 },
   menuTitle: { fontSize: 16, fontWeight: 'bold', color: '#4A5568', marginBottom: 15, marginLeft: 5 },
   menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 12, borderRadius: 16, marginBottom: 12, elevation: 1 },

@@ -39,7 +39,7 @@ export interface DiaOfensiva {
     status: 'feito' | 'perdido' | 'hoje' | 'futuro';
 }
 
-// ===== Modelos da Matilha (Família) =====
+// ===== Modelos da Familia =====
 export interface Cuidador {
     id: string;
     nome: string;
