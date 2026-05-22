@@ -114,7 +114,7 @@ export default function UserProfileScreen({ navigation }: any) {
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           if (err.path[0] === 'nome') setNomeErro(err.message);
           if (err.path[0] === 'email') setEmailErro(err.message);
           if (err.path[0] === 'senha') setSenhaErro(err.message);

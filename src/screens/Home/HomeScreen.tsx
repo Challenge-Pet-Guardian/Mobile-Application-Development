@@ -10,7 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { Header } from "../../components/Header";
-import { StreakCard } from "../../components/streakCard";
+import { StreakCard } from "../../components/StreakCard";
 import { STORAGE_KEYS } from '../../constants/Keys';
 import { EmptyState } from "../../components/EmptyState";
 import { TipCard } from "../../components/TipCard";

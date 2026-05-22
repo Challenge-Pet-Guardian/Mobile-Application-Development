@@ -35,7 +35,7 @@ export default function LoginScreen({ navigation }: Props) {
       LoginSchema.parse({ email: email.trim(), senha });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           if (err.path[0] === 'email') setEmailErro(err.message);
           if (err.path[0] === 'senha') setSenhaErro(err.message);
         });
