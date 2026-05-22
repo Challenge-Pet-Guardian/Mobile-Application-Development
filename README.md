@@ -12,16 +12,6 @@ O **PetGuardian** é um aplicativo mobile desenvolvido em **React Native com Exp
 
 ---
 
-## ✅ Requisitos Atendidos (Sprint 1)
-
-- **Navegação entre telas:** React Navigation com Stack + Bottom Tabs, 9+ rotas navegáveis. ✅
-- **Protótipo visual funcional:** Telas refinadas, layout coerente e fluxos lógicos de uso. ✅
-- **Manipulação de Estado:** Formulários dinâmicos com `useState` para Login, Register, Pets, Tarefas, Membros e Mural. ✅
-- **Persistência Local:** Armazenamento com AsyncStorage para sessão, pets, Familia, XP, ofensiva e tarefas. ✅
-- **Execução Nativa:** Testado e validado em dispositivo físico/emulador e não apenas Web. ✅
-
----
-
 ## 🗺️ Telas e Navegação
 
 O aplicativo utiliza uma arquitetura de navegação híbrida para garantir a melhor experiência:
@@ -127,11 +117,57 @@ Escaneie o QR Code com o **Expo Go** para visualizar o app.
 
 ## 👥 Equipe de Desenvolvimento
 
-- **Luna de Carvalho Guimarães** — RM: 562290
-- **Enzo Okuizumi Miranda de Souza** — RM: 561432
-- **Lucas Barros Gouveia** — RM: 566422
-- **Gustavo Keiji Okada** — RM: 563428
-- **Milton Jakson de Sousa Marcelino** — RM: 564836
+
+<table>
+<tr>
+<th>Nome</th>
+<th>RM</th>
+<th>Turma</th>
+<th>GitHub</th>
+<th>LinkedIn</th>
+</tr>
+
+<tr>
+<td>Enzo Okuizumi</td>
+<td>561432</td>
+<td>2TDSPG</td>
+<td><a href="https://github.com/EnzoOkuizumiFiap">EnzoOkuizumiFiap</a></td>
+<td><a href="https://www.linkedin.com/in/enzo-okuizumi-b60292256/">Enzo Okuizumi</a></td>
+</tr>
+
+<tr>
+<td>Lucas Barros Gouveia</td>
+<td>566422</td>
+<td>2TDSPG</td>
+<td><a href="https://github.com/LuzBGouveia">LuzBGouveia</a></td>
+<td><a href="https://www.linkedin.com/in/lucas-barros-gouveia-09b147355/">Lucas Barros Gouveia</a></td>
+</tr>
+
+<tr>
+<td>Milton Marcelino</td>
+<td>564836</td>
+<td>2TDSPG</td>
+<td><a href="https://github.com/MiltonMarcelino">MiltonMarcelino</a></td>
+<td><a href="http://linkedin.com/in/milton-marcelino-250298142">Milton Marcelino</a></td>
+</tr>
+
+<tr>
+<td>Luna de Carvalho Guimarães</td>
+<td>562290</td>
+<td>2TDSPG</td>
+<td><a href="https://github.com/lunaguima">lunaguima</a></td>
+<td><a href="https://www.linkedin.com/in/luna-m-guimar%C3%A3es-1850ab173/">Luna M. Guimarães</a></td>
+</tr>
+
+<tr>
+<td>Gustavo Okada</td>
+<td>563428</td>
+<td>2TDSPG</td>
+<td><a href="https://github.com/Gdev3356">GustavoOkada7268</a></td>
+<td><a href="https://www.linkedin.com/in/gustavo-okada-53a3b8359/">Gustavo Okada</a></td>
+</tr>
+
+</table>
 
 ---
 
