@@ -6,6 +6,7 @@ import { Header } from '../../components/Header';
 import { STORAGE_KEYS } from '../../constants/Keys';
 import { Pet } from '../../types/models';
 import { AVATARES_DISPONIVEIS, getAvatarById } from '../../constants/Avatares';
+import { PetSchema } from '../../utils/schemas';
 
 interface PetFormState {
   avatarId: string;
@@ -89,25 +90,74 @@ export default function PetProfileScreen() {
   }, []);
 
   const salvarDadosPet = useCallback(async () => {
-    if (!form.nome) {
-      Alert.alert('Aviso', 'O nome do pet é obrigatório!');
+    const result = PetSchema.safeParse(form);
+    if (!result.success) {
+      const primeiroErro = result.error.issues[0].message;
+      Alert.alert('Erro de Validação', primeiroErro);
       return;
+    }
+
+    const { 
+      avatarId, nome, raca, idade, peso, sexo, castrado, 
+      ultimaVacina, ultimaConsulta, veterinario, 
+      alergias, medicamentos 
+    } = result.data;
+
+    // Normalizações rápidas pós-validação para salvar de forma limpa e padronizada
+    let castradoNormalizado = castrado;
+    if (castradoNormalizado) {
+      castradoNormalizado = ['sim', 's', 'yes', 'y'].includes(castradoNormalizado.toLowerCase()) ? 'Sim' : 'Não';
+    }
+
+    let sexoNormalizado = sexo;
+    if (sexoNormalizado) {
+      sexoNormalizado = ['macho', 'm', 'male'].includes(sexoNormalizado.toLowerCase()) ? 'Macho' : 'Fêmea';
+    }
+
+    let pesoNormalizado = peso;
+    if (pesoNormalizado && /^\d+([.,]\d+)?$/.test(pesoNormalizado)) {
+      pesoNormalizado = `${pesoNormalizado.replace(',', '.')} kg`;
+    }
+
+    let idadeNormalizado = idade;
+    if (idadeNormalizado && /^\d+$/.test(idadeNormalizado)) {
+      const num = Number(idadeNormalizado);
+      idadeNormalizado = num === 1 ? '1 ano' : `${num} anos`;
+    }
+
+    let vetNormalizado = veterinario;
+    if (vetNormalizado) {
+      const apenasNumeros = vetNormalizado.replace(/\D/g, '');
+      if (apenasNumeros.length > 0) {
+        let numeroSemDDI = apenasNumeros;
+        if (apenasNumeros.startsWith('55') && apenasNumeros.length > 11) {
+          numeroSemDDI = apenasNumeros.substring(2);
+        }
+        // Aplica formatação automática se digitado apenas números
+        if (vetNormalizado === apenasNumeros) {
+          if (numeroSemDDI.length === 11) {
+            vetNormalizado = `(${numeroSemDDI.substring(0, 2)}) ${numeroSemDDI.substring(2, 7)}-${numeroSemDDI.substring(7)}`;
+          } else if (numeroSemDDI.length === 10) {
+            vetNormalizado = `(${numeroSemDDI.substring(0, 2)}) ${numeroSemDDI.substring(2, 6)}-${numeroSemDDI.substring(6)}`;
+          }
+        }
+      }
     }
 
     const dadosDoFormulario: Pet = { 
       id: petAtualId || Date.now().toString(),
-      avatarId: form.avatarId,
-      nome: form.nome,
-      raca: form.raca,
-      idade: form.idade,
-      peso: form.peso,
-      sexo: form.sexo,
-      castrado: form.castrado,
-      ultimaVacina: form.ultimaVacina,
-      ultimaConsulta: form.ultimaConsulta,
-      veterinario: form.veterinario,
-      alergias: form.alergias,
-      medicamentos: form.medicamentos 
+      avatarId,
+      nome,
+      raca,
+      idade: idadeNormalizado,
+      peso: pesoNormalizado,
+      sexo: sexoNormalizado,
+      castrado: castradoNormalizado,
+      ultimaVacina,
+      ultimaConsulta,
+      veterinario: vetNormalizado,
+      alergias,
+      medicamentos
     };
 
     try {
