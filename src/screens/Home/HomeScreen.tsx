@@ -1,220 +1,34 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { StatusBar } from "expo-status-bar";
-import { 
-    Text, View, Image, StyleSheet, ScrollView, Platform, 
-    ActivityIndicator, TouchableOpacity, 
-    TextInput, KeyboardAvoidingView, Alert 
-} from "react-native";
+import { Text, View, Image, StyleSheet, ScrollView, Platform, ActivityIndicator, TouchableOpacity, TextInput, KeyboardAvoidingView, Alert } from "react-native";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
-
 import { Header } from "../../components/Header";
 import { StreakCard } from "../../components/StreakCard";
-import { STORAGE_KEYS } from '../../constants/Keys';
 import { EmptyState } from "../../components/EmptyState";
 import { TipCard } from "../../components/TipCard";
 import { TaskItem } from "../../components/TaskItem";
 import { HighlightTaskCard } from "../../components/HighlightTaskCard";
 import { HealthHistoryCard } from "../../components/HealthHistoryCard";
-import { Pet, Tarefa, DiaOfensiva } from '../../types/models';
-import { TaskService } from '../../services/TaskService';
 import { getAvatarById } from '../../constants/Avatares';
+import { useHome } from "../../hooks/useHome";
 
 export default function Home({ navigation }: any) {
-    const [loading, setLoading] = useState(true);
-    const [temFamilia, setTemFamilia] = useState(false);
-    
-    // Estados do Formulário (Sem usar o componente Modal)
     const [formVisivel, setFormVisivel] = useState(false);
     const [titulo, setTitulo] = useState('');
     const [descricao, setDescricao] = useState('');
-    
-    const [xpTotal, setXpTotal] = useState(0);
-    const [ofensivaTotal, setOfensivaTotal] = useState(0); 
-    const [householdName, setHouseholdName] = useState('Minha Família'); 
-    const [petsDaFamilia, setPetsDaFamilia] = useState<Pet[]>([]);
 
-    const [tarefas, setTarefas] = useState<Tarefa[]>([]);
-    const [diasOfensiva, setDiasOfensiva] = useState<DiaOfensiva[]>([]);
+    const { loading, temFamilia, xpTotal, ofensivaTotal, householdName, petsDaFamilia, tarefas, diasOfensiva, handleCriarTarefa, alternarTarefaStatus, proximaTarefaPendente } = useHome();
 
-    useFocusEffect(
-        useCallback(() => {
-            carregarDadosFuncionais();
-            gerarDiasDaSemana();
-        }, [])
-    );
-
-    const carregarDadosFuncionais = async () => {
-        try {
-            setLoading(true);
-
-            const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
-            let meuNome = '';
-            if (userDataString) meuNome = JSON.parse(userDataString).nome.trim();
-
-            const cuidadoresString = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
-            let usuarioEstaNaLista = false;
-            if (cuidadoresString && meuNome) {
-                const lista = JSON.parse(cuidadoresString);
-                usuarioEstaNaLista = lista.some((c: any) => c.nome.replace(' (Você)', '').trim() === meuNome);
-            }
-
-            let FamiliaAtiva = await AsyncStorage.getItem(STORAGE_KEYS.FAMILIA_ATIVA);
-            
-            if (usuarioEstaNaLista && FamiliaAtiva !== 'sim') {
-                await AsyncStorage.setItem(STORAGE_KEYS.FAMILIA_ATIVA, 'sim');
-                FamiliaAtiva = 'sim';
-            } else if (!usuarioEstaNaLista && FamiliaAtiva === 'sim') {
-                await AsyncStorage.setItem(STORAGE_KEYS.FAMILIA_ATIVA, 'nao');
-                FamiliaAtiva = 'nao';
-            }
-
-            if (FamiliaAtiva !== 'sim') {
-                setTemFamilia(false);
-                setLoading(false);
-                return;
-            }
-            
-            setTemFamilia(true);
-
-            const nomeCasaSalvo = await AsyncStorage.getItem(STORAGE_KEYS.NOME_FAMILIA);
-            if (nomeCasaSalvo) setHouseholdName(nomeCasaSalvo);
-
-            const FamiliaStr = await AsyncStorage.getItem(STORAGE_KEYS.LISTA_PETS);
-            let FamiliaArray: Pet[] = [];
-            if (FamiliaStr) FamiliaArray = JSON.parse(FamiliaStr);
-            setPetsDaFamilia(FamiliaArray);
-
-            const pontosSalvos = await AsyncStorage.getItem(STORAGE_KEYS.PONTOS_XP);
-            if (pontosSalvos) setXpTotal(Number(pontosSalvos));
-
-            const ofensivaSalva = await AsyncStorage.getItem(STORAGE_KEYS.OFENSIVA_DIAS);
-            if (ofensivaSalva) setOfensivaTotal(Number(ofensivaSalva));
-
-            const tarefasDoDia = await TaskService.carregarTarefasHoje();
-            setTarefas(tarefasDoDia);
-
-        } catch (error) {
-            console.log(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const atualizarOfensivaReal = async () => {
-        try {
-            const hoje = new Date().toDateString();
-            const ultimaDataOfensiva = await AsyncStorage.getItem(STORAGE_KEYS.DATA_ULTIMA_OFENSIVA);
-            const ofensivaAtualStr = await AsyncStorage.getItem(STORAGE_KEYS.OFENSIVA_DIAS);
-            let ofensivaAtual = ofensivaAtualStr ? Number(ofensivaAtualStr) : 0;
-
-            if (ultimaDataOfensiva === hoje) return; 
-
-            const ontem = new Date();
-            ontem.setDate(ontem.getDate() - 1);
-            const ontemStr = ontem.toDateString();
-
-            if (ultimaDataOfensiva === ontemStr) {
-                ofensivaAtual += 1;
-            } else {
-                ofensivaAtual = 1; 
-            }
-
-            await AsyncStorage.setItem(STORAGE_KEYS.OFENSIVA_DIAS, String(ofensivaAtual));
-            await AsyncStorage.setItem(STORAGE_KEYS.DATA_ULTIMA_OFENSIVA, hoje);
-            setOfensivaTotal(ofensivaAtual);
-        } catch (e) { console.log(e); }
-    };
-
-    const registrarXPIndividual = async (pontos: number) => {
-        try {
-            const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
-            if (!userDataString) return;
-            const userData = JSON.parse(userDataString);
-            const meuNome = userData.nome.trim();
-
-            const cuidadoresString = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
-            if (cuidadoresString) {
-                let listaCuidadores = JSON.parse(cuidadoresString);
-                listaCuidadores = listaCuidadores.map((c: any) => {
-                    const nomeNaLista = c.nome.replace(' (Você)', '').trim();
-                    if (nomeNaLista === meuNome) return { ...c, xp: (c.xp || 0) + pontos };
-                    return c;
-                });
-                await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(listaCuidadores));
-            }
-        } catch (e) { console.log(e); }
-    };
-
-    const gerarDiasDaSemana = () => {
-        const hoje = new Date();
-        const diaDaSemanaAtual = hoje.getDay(); 
-        const distanciaParaSegunda = diaDaSemanaAtual === 0 ? 6 : diaDaSemanaAtual - 1;
-        const segunda = new Date(hoje);
-        segunda.setDate(hoje.getDate() - distanciaParaSegunda);
-
-        const letras = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
-        const dias: DiaOfensiva[] = [];
-
-        for (let i = 0; i < 7; i++) {
-            const dataAtual = new Date(segunda);
-            dataAtual.setDate(segunda.getDate() + i);
-            const numeroDia = dataAtual.getDate().toString().padStart(2, '0');
-            let status: DiaOfensiva['status'] = 'futuro';
-            const dataSemHora = new Date(dataAtual.toDateString());
-            const hojeSemHora = new Date(hoje.toDateString());
-            if (dataSemHora.getTime() === hojeSemHora.getTime()) status = 'hoje';
-            else if (dataSemHora < hojeSemHora) status = 'feito'; 
-            dias.push({ id: i, dayLabel: letras[i], dayNumber: numeroDia, status: status });
-        }
-        setDiasOfensiva(dias);
-    };
-
-    const handleCriarTarefa = async () => {
+    const salvarTarefa = async () => {
         if (!titulo.trim() || !descricao.trim()) {
             Alert.alert("Campos vazios", "O C# exige título e descrição para salvar!");
             return;
         }
-
-        const novaTarefaParaService = {
-            titulo: titulo.trim(),
-            descricao: descricao.trim(),
-            horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-            xp: 15,
-            diaDaSemana: new Date().getDay(),
-            petId: petsDaFamilia[0]?.id || "0" 
-        };
-
-        await TaskService.adicionarTarefaFamilia(novaTarefaParaService);
+        await handleCriarTarefa(titulo, descricao);
         setFormVisivel(false);
         setTitulo('');
         setDescricao('');
-        
-        const tarefasAtualizadas = await TaskService.carregarTarefasHoje();
-        setTarefas(tarefasAtualizadas);
     };
-
-    const alternarTarefaStatus = async (id: number) => {
-        const tarefaClicada = tarefas.find(t => t.id === id);
-        if (!tarefaClicada) return;
-
-        const isConcluindo = !tarefaClicada.concluida; 
-        
-        const novasTarefas = await TaskService.atualizarStatusTarefaHoje(id, isConcluindo);
-        setTarefas(novasTarefas);
-
-        const mudancaXP = isConcluindo ? tarefaClicada.xp : -tarefaClicada.xp;
-        const novoXP = xpTotal + mudancaXP;
-        setXpTotal(novoXP);
-
-        await AsyncStorage.setItem(STORAGE_KEYS.PONTOS_XP, String(novoXP));
-
-        if (isConcluindo) atualizarOfensivaReal(); 
-        await registrarXPIndividual(mudancaXP);
-    };
-
-    const proximaTarefaPendente = tarefas.find(t => !t.concluida) || null;
 
     if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#1CB0F6" /></View>;
 
@@ -354,7 +168,7 @@ export default function Home({ navigation }: any) {
                                     <Text style={{color: '#64748B', fontWeight: 'bold'}}>Cancelar</Text>
                                 </TouchableOpacity>
                                 
-                                <TouchableOpacity style={styles.btnSalvar} onPress={handleCriarTarefa}>
+                                <TouchableOpacity style={styles.btnSalvar} onPress={salvarTarefa}>
                                     <Text style={{color: '#FFF', fontWeight: 'bold'}}>Salvar Tarefa</Text>
                                 </TouchableOpacity>
                             </View>

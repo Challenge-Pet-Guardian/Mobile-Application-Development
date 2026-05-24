@@ -10,6 +10,9 @@
 
 [Repositório Github](https://github.com/Challenge-Pet-Guardian/Mobile-Application-Development)
 
+## Vídeo de Demonstração
+
+[Vídeo Youtube](https://www.youtube.com/watch?v=e28kCgB1Rqs)
 
 ## 📱 Sobre o Projeto
 
@@ -173,11 +176,3 @@ Escaneie o QR Code com o **Expo Go** para visualizar o app.
 </tr>
 
 </table>
-
----
-
-## 🎥 Vídeo de Demonstração
-
-📺 [Assista ao vídeo no YouTube](INSERIR_LINK_AQUI)
-
-> O vídeo demonstra o fluxo completo: cadastro, login, criação de família, rotina sincronizada e persistência de dados após reinício.

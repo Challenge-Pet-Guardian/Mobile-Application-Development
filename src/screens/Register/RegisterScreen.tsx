@@ -50,7 +50,7 @@ export default function RegisterScreen({ navigation }: Props) {
       await AsyncStorage.removeItem(STORAGE_KEYS.USER_DATA);
       await AsyncStorage.removeItem(STORAGE_KEYS.FAMILIA_ATIVA);
 
-      const userData = { nome, email, senha };
+      const userData = { nome: nome.trim(), email: email.trim(), senha };
       
       await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
       

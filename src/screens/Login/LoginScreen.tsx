@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
   Platform,
   KeyboardAvoidingView,
   ScrollView
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { STORAGE_KEYS } from '../../constants/Keys'; 
+import { STORAGE_KEYS } from '../../constants/Keys';
 import { LoginSchema } from '../../utils/schemas';
 import { z } from 'zod';
 
@@ -31,8 +31,10 @@ export default function LoginScreen({ navigation }: Props) {
     setEmailErro('');
     setSenhaErro('');
 
+    const emailFormatado = email.trim();
+
     try {
-      LoginSchema.parse({ email: email.trim(), senha });
+      LoginSchema.parse({ email: emailFormatado, senha });
     } catch (error) {
       if (error instanceof z.ZodError) {
         error.issues.forEach((err) => {
@@ -45,33 +47,53 @@ export default function LoginScreen({ navigation }: Props) {
 
     try {
       const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
-      
+
       if (userDataString) {
         const userData = JSON.parse(userDataString);
-        
-        if (userData.email === email && userData.senha === senha) {
+
+        if (userData.email?.trim() !== emailFormatado) {
+          setEmailErro('E-mail não cadastrado.');
+          if (Platform.OS === 'web') {
+            window.alert('E-mail não cadastrado.');
+          } else {
+            Alert.alert('Erro', 'E-mail não cadastrado.');
+          }
+        } else if (userData.senha !== senha) {
+          setSenhaErro('Senha incorreta.');
+          if (Platform.OS === 'web') {
+            window.alert('Senha incorreta.');
+          } else {
+            Alert.alert('Erro', 'Senha incorreta.');
+          }
+        } else {
           // Grava o estado de login ativo para o F5 funcionar
           await AsyncStorage.setItem(STORAGE_KEYS.LOGADO, 'sim');
-          navigation.navigate('Tabs'); 
-        } else {
-          Alert.alert('Erro', 'E-mail ou senha incorretos.');
+          navigation.navigate('Tabs');
         }
       } else {
-        Alert.alert('Ops!', 'Nenhuma conta encontrada. Crie uma conta primeiro!');
+        if (Platform.OS === 'web') {
+          window.alert('Nenhuma conta encontrada. Crie uma conta primeiro!');
+        } else {
+          Alert.alert('Ops!', 'Nenhuma conta encontrada. Crie uma conta primeiro!');
+        }
       }
     } catch (e) {
-      Alert.alert('Erro', 'Não foi possível acessar a conta.');
+      if (Platform.OS === 'web') {
+        window.alert('Não foi possível acessar a conta.');
+      } else {
+        Alert.alert('Erro', 'Não foi possível acessar a conta.');
+      }
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.mainContainer} 
+    <KeyboardAvoidingView
+      style={styles.mainContainer}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.contentWrapper}>
-          
+
           <View style={styles.headerContainer}>
             <Text style={{ fontSize: 40, marginBottom: 10 }}>🐾</Text>
             <Text style={styles.title}>PetGuardian</Text>
@@ -79,7 +101,7 @@ export default function LoginScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.formContainer}>
-            
+
             <Text style={styles.inputLabel}>E-mail</Text>
             <TextInput
               style={[styles.input, emailErro !== '' ? styles.inputErro : null]}
@@ -90,7 +112,7 @@ export default function LoginScreen({ navigation }: Props) {
               value={email}
               onChangeText={(texto) => {
                 setEmail(texto);
-                setEmailErro(''); 
+                setEmailErro('');
               }}
             />
             {emailErro !== '' && <Text style={styles.erroTexto}>{emailErro}</Text>}
@@ -104,7 +126,7 @@ export default function LoginScreen({ navigation }: Props) {
               value={senha}
               onChangeText={(texto) => {
                 setSenha(texto);
-                setSenhaErro(''); 
+                setSenhaErro('');
               }}
             />
             {senhaErro !== '' && <Text style={styles.erroTexto}>{senhaErro}</Text>}
@@ -140,11 +162,11 @@ const styles = StyleSheet.create({
   title: { fontSize: 32, fontWeight: '900', color: '#1A202C', marginBottom: 8 },
   subtitle: { fontSize: 16, color: '#718096', textAlign: 'center' },
   formContainer: {
-    width: '100%', 
-    backgroundColor: '#FFFFFF', 
-    padding: 24, 
-    borderRadius: 24, 
-    borderWidth: 1, 
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    padding: 24,
+    borderRadius: 24,
+    borderWidth: 1,
     borderColor: '#EDF2F7',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
