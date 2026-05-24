@@ -12,7 +12,7 @@
 
 ## Vídeo de Demonstração
 
-[Vídeo Youtube](https://www.youtube.com/watch?v=e28kCgB1Rqs)
+[Vídeo Youtube](https://youtu.be/mh-b1xhxOx0)
 
 ## 📱 Sobre o Projeto
 
