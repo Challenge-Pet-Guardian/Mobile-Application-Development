@@ -1,27 +1,17 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
-import { 
-    StyleSheet, 
-    Text, 
-    View, 
-    TouchableOpacity, 
-    Platform 
-} from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from "../../constants/Keys";
 
 export default function WelcomeScreen({ navigation }: any) {
-    
-    
+
     useEffect(() => {
         const verificarSessaoAtiva = async () => {
             try {
-                
                 const logado = await AsyncStorage.getItem(STORAGE_KEYS.LOGADO);
-                
                 if (logado === "sim") {
-                    
                     navigation.replace("Tabs");
                 }
             } catch (error) {
@@ -32,16 +22,24 @@ export default function WelcomeScreen({ navigation }: any) {
         verificarSessaoAtiva();
     }, [navigation]);
 
+    // Handlers de navegação memoizados
+    const handleRegister = useCallback(() => {
+        navigation.navigate("Register");
+    }, [navigation]);
+
+    const handleLogin = useCallback(() => {
+        navigation.navigate("Login");
+    }, [navigation]);
 
     return (
         <View style={styles.container}>
             <StatusBar style="light" />
-            
+
             <View style={styles.content}>
                 {/* Logo e Versão */}
                 <View style={styles.headerSection}>
                     <MaterialCommunityIcons name="paw" size={60} color="#FF9600" />
-                    
+
                     <View style={styles.badge}>
                         <Text style={styles.badgeText}>• v1.0 - Novo</Text>
                     </View>
@@ -72,18 +70,18 @@ export default function WelcomeScreen({ navigation }: any) {
 
             {/* Ações Inferiores */}
             <View style={styles.footer}>
-                <TouchableOpacity 
-                    style={styles.btnMain} 
-                    onPress={() => navigation.navigate("Register")}
+                <TouchableOpacity
+                    style={styles.btnMain}
+                    onPress={handleRegister}
                 >
                     <Text style={styles.btnMainText}>Criar conta grátis →</Text>
                 </TouchableOpacity>
 
                 <Text style={styles.labelSimple}>já tenho conta</Text>
 
-                <TouchableOpacity 
-                    style={styles.btnOutline} 
-                    onPress={() => navigation.navigate("Login")}
+                <TouchableOpacity
+                    style={styles.btnOutline}
+                    onPress={handleLogin}
                 >
                     <Text style={styles.btnOutlineText}>Entrar</Text>
                 </TouchableOpacity>
@@ -100,7 +98,7 @@ export default function WelcomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#081324", 
+        backgroundColor: "#081324",
         paddingHorizontal: 30,
         paddingTop: Platform.OS === "android" ? 60 : 0,
     },

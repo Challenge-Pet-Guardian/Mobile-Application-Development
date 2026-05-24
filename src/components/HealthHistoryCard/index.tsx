@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { Pet } from '../../types/models';
@@ -7,19 +7,14 @@ interface HealthHistoryCardProps {
     pets: Pet[];
 }
 
-export function HealthHistoryCard({ pets }: HealthHistoryCardProps) {
+export const HealthHistoryCard = memo(function HealthHistoryCard({ pets }: HealthHistoryCardProps) {
     return (
         <View style={styles.card}>
             <Text style={[styles.sectionTitle, { marginBottom: 20 }]}>Histórico Clínico</Text>
             {pets.map((pet, index) => (
                 <View 
                     key={index} 
-                    style={{ 
-                        marginBottom: 15, 
-                        borderBottomWidth: index === pets.length - 1 ? 0 : 1, 
-                        borderBottomColor: '#F0F0F0', 
-                        paddingBottom: index === pets.length - 1 ? 0 : 15 
-                    }}
+                    style={index === pets.length - 1 ? styles.lastPetItem : styles.petItem}
                 >
                     <Text style={styles.petName}>{pet.nome}</Text>
                     <View style={styles.row}>
@@ -45,7 +40,7 @@ export function HealthHistoryCard({ pets }: HealthHistoryCardProps) {
             ))}
         </View>
     );
-}
+});
 
 const styles = StyleSheet.create({
     card: { 
@@ -59,6 +54,17 @@ const styles = StyleSheet.create({
         fontSize: 18, 
         fontWeight: '700', 
         color: '#1E293B' 
+    },
+    petItem: {
+        marginBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+        paddingBottom: 15
+    },
+    lastPetItem: {
+        marginBottom: 15,
+        borderBottomWidth: 0,
+        paddingBottom: 0
     },
     petName: { 
         fontWeight: 'bold', 

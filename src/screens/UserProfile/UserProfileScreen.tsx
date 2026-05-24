@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput, KeyboardAvoidingView, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,14 @@ import { STORAGE_KEYS } from '../../constants/Keys';
 import { StatCard } from '../../components/StatCard';
 import { ProfileEditSchema } from '../../utils/schemas';
 import { z } from 'zod';
+
+const showAlert = (title: string, message: string) => {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
 
 export default function UserProfileScreen({ navigation }: any) {
   const [nome, setNome] = useState('Carregando...');
@@ -16,26 +24,32 @@ export default function UserProfileScreen({ navigation }: any) {
   const [meuRank, setMeuRank] = useState('---');
 
   const [janelaAberta, setJanelaAberta] = useState<'nenhum' | 'editar' | 'faq' | 'contato'>('nenhum');
-  const [editNome, setEditNome] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editSenha, setEditSenha] = useState('');
-  const [confirmarEditSenha, setConfirmarEditSenha] = useState('');
   
-  const [nomeErro, setNomeErro] = useState('');
-  const [emailErro, setEmailErro] = useState('');
-  const [senhaErro, setSenhaErro] = useState('');
-  const [confirmarSenhaErro, setConfirmarSenhaErro] = useState('');
+  // Consolidação de estados locais em objetos estruturados
+  const [editForm, setEditForm] = useState({
+    nome: '',
+    email: '',
+    senha: '',
+    confirmarSenha: ''
+  });
+
+  const [editErros, setEditErros] = useState({
+    nome: '',
+    email: '',
+    senha: '',
+    confirmarSenha: ''
+  });
 
   const [msgContato, setMsgContato] = useState('');
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      carregarUsuario();
-    });
-    return unsubscribe;
-  }, [navigation]);
+  // Atualização genérica de inputs e limpeza automática de erros
+  const handleEditChange = useCallback((campo: keyof typeof editForm, valor: string) => {
+    setEditForm(prev => ({ ...prev, [campo]: valor }));
+    setEditErros(prev => ({ ...prev, [campo]: '' }));
+  }, []);
 
-  const carregarUsuario = async () => {
+  // Busca e processamento dos dados do usuário
+  const carregarUsuario = useCallback(async () => {
     try {
       let nomeUsuario = 'Usuário';
       const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
@@ -45,10 +59,12 @@ export default function UserProfileScreen({ navigation }: any) {
         nomeUsuario = userData.nome || 'Usuário';
         setNome(nomeUsuario);
         setEmail(userData.email || '');
-        setEditNome(userData.nome || '');
-        setEditEmail(userData.email || '');
-        setEditSenha(userData.senha || '');
-        setConfirmarEditSenha(userData.senha || '');
+        setEditForm({
+          nome: userData.nome || '',
+          email: userData.email || '',
+          senha: userData.senha || '',
+          confirmarSenha: userData.senha || ''
+        });
       }
 
       const FamiliaAtiva = await AsyncStorage.getItem(STORAGE_KEYS.FAMILIA_ATIVA);
@@ -88,48 +104,63 @@ export default function UserProfileScreen({ navigation }: any) {
     } catch (error) {
       console.log(error);
     }
-  };
+  }, []);
 
-  const handleLogout = async () => {
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      carregarUsuario();
+    });
+    return unsubscribe;
+  }, [navigation, carregarUsuario]);
+
+  // Handler de logout memoizado
+  const handleLogout = useCallback(async () => {
     try {
       await AsyncStorage.removeItem(STORAGE_KEYS.LOGADO);
       navigation.replace('Welcome');
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [navigation]);
 
-  const salvarEdicao = async () => {
-    setNomeErro('');
-    setEmailErro('');
-    setSenhaErro('');
-    setConfirmarSenhaErro('');
+  // Fechamento de modal e limpeza de erros
+  const handleFecharModal = useCallback(() => {
+    setJanelaAberta('nenhum');
+    setEditErros({ nome: '', email: '', senha: '', confirmarSenha: '' });
+    setMsgContato('');
+  }, []);
+
+  // Salvar edições do perfil memoizado
+  const salvarEdicao = useCallback(async () => {
+    setEditErros({ nome: '', email: '', senha: '', confirmarSenha: '' });
 
     try {
       ProfileEditSchema.parse({ 
-        nome: editNome.trim(), 
-        email: editEmail.trim(), 
-        senha: editSenha, 
-        confirmarSenha: confirmarEditSenha 
+        nome: editForm.nome.trim(), 
+        email: editForm.email.trim(), 
+        senha: editForm.senha, 
+        confirmarSenha: editForm.confirmarSenha 
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
+        const novosErros = { nome: '', email: '', senha: '', confirmarSenha: '' };
         error.issues.forEach((err) => {
-          if (err.path[0] === 'nome') setNomeErro(err.message);
-          if (err.path[0] === 'email') setEmailErro(err.message);
-          if (err.path[0] === 'senha') setSenhaErro(err.message);
-          if (err.path[0] === 'confirmarSenha') setConfirmarSenhaErro(err.message);
+          const field = err.path[0] as keyof typeof novosErros;
+          if (field) {
+            novosErros[field] = err.message;
+          }
         });
+        setEditErros(novosErros);
       }
       return;
     }
     
     try {
       const nomeAntigo = nome.trim();
-      const nomeNovo = editNome.trim();
+      const nomeNovo = editForm.nome.trim();
       const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
       const userData = userDataString ? JSON.parse(userDataString) : {};
-      const novosDados = { ...userData, nome: nomeNovo, email: editEmail.trim(), senha: editSenha };
+      const novosDados = { ...userData, nome: nomeNovo, email: editForm.email.trim(), senha: editForm.senha };
       await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(novosDados));
       
       const cuidadoresString = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
@@ -154,24 +185,24 @@ export default function UserProfileScreen({ navigation }: any) {
       }
       
       setNome(nomeNovo);
-      setEmail(editEmail);
-      Alert.alert('Sucesso', 'Perfil atualizado!');
+      setEmail(editForm.email);
+      showAlert('Sucesso', 'Perfil atualizado!');
       setJanelaAberta('nenhum');
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar.');
+      showAlert('Erro', 'Não foi possível salvar.');
     }
-  };
+  }, [nome, editForm]);
 
-  const enviarContato = () => {
-    if (!msgContato) {
-      Alert.alert('Aviso', 'Escreva uma mensagem antes de enviar.');
+  // Enviar feedback de contato memoizado
+  const enviarContato = useCallback(() => {
+    if (!msgContato.trim()) {
+      showAlert('Aviso', 'Escreva uma mensagem antes de enviar.');
       return;
     }
-    Alert.alert('Mensagem Enviada!', 'A equipe entrará em contato em breve.');
+    showAlert('Mensagem Enviada!', 'A equipe entrará em contato em breve.');
     setMsgContato('');
     setJanelaAberta('nenhum');
-  };
-
+  }, [msgContato]);
 
   return (
     <View style={styles.container}>
@@ -227,27 +258,27 @@ export default function UserProfileScreen({ navigation }: any) {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Gerenciar Perfil</Text>
-              <TouchableOpacity onPress={() => { setJanelaAberta('nenhum'); setNomeErro(''); setEmailErro(''); setSenhaErro(''); setConfirmarSenhaErro(''); }} style={styles.closeBtn}>
+              <TouchableOpacity onPress={handleFecharModal} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color="#718096" />
               </TouchableOpacity>
             </View>
             
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.inputLabel}>Nome Completo</Text>
-              <TextInput style={[styles.modalInput, nomeErro !== '' ? styles.inputErro : null]} value={editNome} onChangeText={(t) => { setEditNome(t); setNomeErro(''); }} />
-              {nomeErro !== '' && <Text style={styles.erroTexto}>{nomeErro}</Text>}
+              <TextInput style={[styles.modalInput, editErros.nome !== '' ? styles.inputErro : null]} value={editForm.nome} onChangeText={(t) => handleEditChange('nome', t)} />
+              {editErros.nome !== '' && <Text style={styles.erroTexto}>{editErros.nome}</Text>}
 
               <Text style={styles.inputLabel}>E-mail</Text>
-              <TextInput style={[styles.modalInput, emailErro !== '' ? styles.inputErro : null]} value={editEmail} onChangeText={(t) => { setEditEmail(t); setEmailErro(''); }} keyboardType="email-address" autoCapitalize="none" />
-              {emailErro !== '' && <Text style={styles.erroTexto}>{emailErro}</Text>}
+              <TextInput style={[styles.modalInput, editErros.email !== '' ? styles.inputErro : null]} value={editForm.email} onChangeText={(t) => handleEditChange('email', t)} keyboardType="email-address" autoCapitalize="none" />
+              {editErros.email !== '' && <Text style={styles.erroTexto}>{editErros.email}</Text>}
 
               <Text style={styles.inputLabel}>Senha</Text>
-              <TextInput style={[styles.modalInput, senhaErro !== '' ? styles.inputErro : null]} value={editSenha} onChangeText={(t) => { setEditSenha(t); setSenhaErro(''); }} secureTextEntry />
-              {senhaErro !== '' && <Text style={styles.erroTexto}>{senhaErro}</Text>}
+              <TextInput style={[styles.modalInput, editErros.senha !== '' ? styles.inputErro : null]} value={editForm.senha} onChangeText={(t) => handleEditChange('senha', t)} secureTextEntry />
+              {editErros.senha !== '' && <Text style={styles.erroTexto}>{editErros.senha}</Text>}
 
               <Text style={styles.inputLabel}>Confirmar Senha</Text>
-              <TextInput style={[styles.modalInput, confirmarSenhaErro !== '' ? styles.inputErro : null]} value={confirmarEditSenha} onChangeText={(t) => { setConfirmarEditSenha(t); setConfirmarSenhaErro(''); }} secureTextEntry />
-              {confirmarSenhaErro !== '' && <Text style={styles.erroTexto}>{confirmarSenhaErro}</Text>}
+              <TextInput style={[styles.modalInput, editErros.confirmarSenha !== '' ? styles.inputErro : null]} value={editForm.confirmarSenha} onChangeText={(t) => handleEditChange('confirmarSenha', t)} secureTextEntry />
+              {editErros.confirmarSenha !== '' && <Text style={styles.erroTexto}>{editErros.confirmarSenha}</Text>}
 
               <TouchableOpacity style={styles.modalBtnSalvar} onPress={salvarEdicao}>
                 <Text style={styles.modalBtnSalvarText}>Salvar Alterações</Text>
@@ -265,7 +296,7 @@ export default function UserProfileScreen({ navigation }: any) {
                 <Ionicons name="help-buoy" size={24} color="#0066FF" style={{marginRight: 8}} />
                 <Text style={styles.modalTitle}>Dúvidas Frequentes</Text>
               </View>
-              <TouchableOpacity onPress={() => setJanelaAberta('nenhum')} style={styles.closeBtn}>
+              <TouchableOpacity onPress={handleFecharModal} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color="#718096" />
               </TouchableOpacity>
             </View>
@@ -321,7 +352,7 @@ export default function UserProfileScreen({ navigation }: any) {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Suporte Técnico</Text>
-              <TouchableOpacity onPress={() => { setJanelaAberta('nenhum'); setMsgContato(''); }} style={styles.closeBtn}>
+              <TouchableOpacity onPress={handleFecharModal} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color="#718096" />
               </TouchableOpacity>
             </View>

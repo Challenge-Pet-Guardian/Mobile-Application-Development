@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
 import { Text, View, Image, StyleSheet, ScrollView, Platform, ActivityIndicator, TouchableOpacity, TextInput, KeyboardAvoidingView, Alert } from "react-native";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,20 +17,64 @@ export default function Home({ navigation }: any) {
     const [titulo, setTitulo] = useState('');
     const [descricao, setDescricao] = useState('');
 
-    const { loading, temFamilia, xpTotal, ofensivaTotal, householdName, petsDaFamilia, tarefas, diasOfensiva, handleCriarTarefa, alternarTarefaStatus, proximaTarefaPendente } = useHome();
+    const { 
+        loading, 
+        temFamilia, 
+        xpTotal, 
+        ofensivaTotal, 
+        householdName, 
+        petsDaFamilia, 
+        tarefas, 
+        diasOfensiva, 
+        handleCriarTarefa, 
+        alternarTarefaStatus, 
+        proximaTarefaPendente 
+    } = useHome();
 
-    const salvarTarefa = async () => {
-        if (!titulo.trim() || !descricao.trim()) {
-            Alert.alert("Campos vazios", "O C# exige título e descrição para salvar!");
-            return;
-        }
-        await handleCriarTarefa(titulo, descricao);
+    // Cálculo de tarefas concluídas
+    const tarefasConcluidasCount = tarefas.filter(t => t.concluida).length;
+
+    // Handlers de navegação memoizados
+    const handleNavigateToFamily = useCallback(() => {
+        navigation.navigate('Family');
+    }, [navigation]);
+
+    const handleNavigateToMeuPet = useCallback(() => {
+        navigation.navigate('MeuPet');
+    }, [navigation]);
+
+    // Handlers de modal memoizados
+    const handleAbrirForm = useCallback(() => {
+        setFormVisivel(true);
+    }, []);
+
+    const handleFecharForm = useCallback(() => {
         setFormVisivel(false);
         setTitulo('');
         setDescricao('');
-    };
+    }, []);
 
-    if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#1CB0F6" /></View>;
+    // Ação de salvar tarefa memoizada com suporte a Web/Native Alerts
+    const salvarTarefa = useCallback(async () => {
+        if (!titulo.trim() || !descricao.trim()) {
+            if (Platform.OS === 'web') {
+                window.alert("É necessário informar título e descrição para salvar!");
+            } else {
+                Alert.alert("Campos vazios", "É necessário informar título e descrição para salvar!");
+            }
+            return;
+        }
+        await handleCriarTarefa(titulo, descricao);
+        handleFecharForm();
+    }, [titulo, descricao, handleCriarTarefa, handleFecharForm]);
+
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#1CB0F6" />
+            </View>
+        );
+    }
 
     if (!temFamilia) {
         return (
@@ -43,7 +87,7 @@ export default function Home({ navigation }: any) {
                         title="Bem-vindo ao PetGuardian!"
                         description="Para ver as tarefas do dia, você precisa de uma Familia."
                         buttonText="Criar ou Entrar numa Familia"
-                        onButtonPress={() => navigation.navigate('Family')}
+                        onButtonPress={handleNavigateToFamily}
                     />
                 </ScrollView>
                 <StatusBar style="dark" />
@@ -63,7 +107,7 @@ export default function Home({ navigation }: any) {
                         description="Cadastre o seu primeiro pet para liberar o painel de tarefas!"
                         buttonText="Cadastrar meu Pet"
                         buttonColor="#FF9600"
-                        onButtonPress={() => navigation.navigate('MeuPet')}
+                        onButtonPress={handleNavigateToMeuPet}
                     />
                 </ScrollView>
                 <StatusBar style="dark" />
@@ -97,7 +141,7 @@ export default function Home({ navigation }: any) {
                 {/* Botão de Adicionar Tarefa */}
                 <TouchableOpacity 
                     style={styles.btnCriar} 
-                    onPress={() => setFormVisivel(true)}
+                    onPress={handleAbrirForm}
                 >
                     <MaterialCommunityIcons name="plus-circle" size={24} color="#FFF" />
                     <Text style={styles.btnCriarText}>Nova Tarefa do Dia</Text>
@@ -111,7 +155,7 @@ export default function Home({ navigation }: any) {
                 <View style={styles.tasksContainer}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Tarefas de Hoje</Text>
-                        <Text style={styles.progressText}>{tarefas.filter(t => t.concluida).length}/{tarefas.length}</Text>
+                        <Text style={styles.progressText}>{tarefasConcluidasCount}/{tarefas.length}</Text>
                     </View>
                     {tarefas.length === 0 ? (
                         <View style={styles.emptyTasks}>
@@ -164,7 +208,7 @@ export default function Home({ navigation }: any) {
                             />
 
                             <View style={styles.modalButtons}>
-                                <TouchableOpacity style={styles.btnCancelar} onPress={() => setFormVisivel(false)}>
+                                <TouchableOpacity style={styles.btnCancelar} onPress={handleFecharForm}>
                                     <Text style={{color: '#64748B', fontWeight: 'bold'}}>Cancelar</Text>
                                 </TouchableOpacity>
                                 
@@ -200,31 +244,9 @@ const styles = StyleSheet.create({
     emptyTasks: { backgroundColor: '#FFF', borderRadius: 20, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', gap: 8 },
     emptyTasksText: { fontSize: 16, fontWeight: '600', color: '#94A3B8' },
     emptyTasksSubtext: { fontSize: 14, color: '#CBD5E1' },
-    
-    btnCriar: { 
-        backgroundColor: '#0066FF', 
-        flexDirection: 'row', 
-        padding: 16, 
-        borderRadius: 16, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        gap: 10,
-        elevation: 4
-    },
+    btnCriar: { backgroundColor: '#0066FF', flexDirection: 'row', padding: 16, borderRadius: 16, justifyContent: 'center', alignItems: 'center', gap: 10, elevation: 4 },
     btnCriarText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-
-    absoluteOverlay: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        justifyContent: 'center',
-        padding: 20,
-        zIndex: 999,
-        elevation: 10,
-    },
+    absoluteOverlay: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20, zIndex: 999, elevation: 10 },
     modalContent: { backgroundColor: '#FFF', borderRadius: 24, padding: 25, elevation: 10 },
     modalHeader: { fontSize: 20, fontWeight: 'bold', color: '#134879', marginBottom: 20, textAlign: 'center' },
     inputModal: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 15, marginBottom: 15, color: '#333' },

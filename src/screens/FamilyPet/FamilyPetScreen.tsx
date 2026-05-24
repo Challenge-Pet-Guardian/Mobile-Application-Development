@@ -9,9 +9,23 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { STORAGE_KEYS } from '../../constants/Keys';
 import { Header } from '../../components/Header';
 import { Pet, Cuidador, Recado } from '../../types/models';
-import { AVATARES_DISPONIVEIS } from '../../constants/Avatares';
+import { AVATARES_DISPONIVEIS, getAvatarById } from '../../constants/Avatares';
 
 type Props = { navigation: NativeStackNavigationProp<any>; };
+
+// Helpers externos para evitar recriação em renderização
+const getInitials = (name: string) => { 
+  if (!name) return '??'; 
+  return name.replace(' (Você)', '').substring(0, 2).toUpperCase(); 
+};
+
+const showAlert = (title: string, message: string) => {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
 
 export default function FamilyPetScreen({ navigation }: Props) {
   const [temFamilia, setTemFamilia] = useState(false);
@@ -35,13 +49,17 @@ export default function FamilyPetScreen({ navigation }: Props) {
   const [modalNomeAberto, setModalNomeAberto] = useState(false);
   const [inputNovoNome, setInputNovoNome] = useState('');
 
-  const carregarDados = async () => {
+  // Carregamento de dados com useCallback
+  const carregarDados = useCallback(async () => {
     try {
       let nomeUsuarioAtual = 'Tutor';
       const dadosConta = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
       if (dadosConta) {
         const conta = JSON.parse(dadosConta);
-        if (conta.nome) { nomeUsuarioAtual = conta.nome; setUsuarioLogado(conta.nome); }
+        if (conta.nome) { 
+          nomeUsuarioAtual = conta.nome; 
+          setUsuarioLogado(conta.nome); 
+        }
       }
 
       const nomeSalvo = await AsyncStorage.getItem(STORAGE_KEYS.NOME_FAMILIA);
@@ -52,7 +70,10 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
       let listaCuidadores: Cuidador[] = [];
       const dadosCuidadores = await AsyncStorage.getItem(STORAGE_KEYS.CUIDADORES);
-      if (dadosCuidadores) { listaCuidadores = JSON.parse(dadosCuidadores); setCuidadores(listaCuidadores); }
+      if (dadosCuidadores) { 
+        listaCuidadores = JSON.parse(dadosCuidadores); 
+        setCuidadores(listaCuidadores); 
+      }
 
       const dadosRecados = await AsyncStorage.getItem(STORAGE_KEYS.RECADOS);
       if (dadosRecados) setRecados(JSON.parse(dadosRecados));
@@ -77,21 +98,25 @@ export default function FamilyPetScreen({ navigation }: Props) {
 
       if (codigoSalvo) setCodigoFamiliaAtiva(codigoSalvo);
       
-      setTemFamilia(FamiliaSalva === 'sim' && usuarioEstaNaLista ? true : false);
-    } catch (error) { console.log(error); }
-  };
+      setTemFamilia(FamiliaSalva === 'sim' && usuarioEstaNaLista);
+    } catch (error) { 
+      console.log(error); 
+    }
+  }, []);
 
-  useFocusEffect(useCallback(() => { carregarDados(); }, []));
+  useFocusEffect(useCallback(() => { 
+    carregarDados(); 
+  }, [carregarDados]));
 
-  const finalizarAcaoFamilia = async () => {
+  // Criação ou entrada de família com useCallback
+  const finalizarAcaoFamilia = useCallback(async () => {
     if (fluxoAberto === 'criando' && nomeFamilia.trim() === '') return;
     if (fluxoAberto === 'entrando' && (codigoConvite.trim() === '' || minhaFuncao.trim() === '')) return;
 
     if (fluxoAberto === 'entrando') {
       const codigoRealDaFamilia = await AsyncStorage.getItem(STORAGE_KEYS.CODIGO_FAMILIA);
       if (codigoConvite.toUpperCase() !== codigoRealDaFamilia) {
-        if (Platform.OS === 'web') window.alert('Código Inválido 🚫\nNão encontramos nenhuma família com esse código.');
-        else Alert.alert('Código Inválido 🚫', 'Não encontramos nenhuma família com esse código.');
+        showAlert('Código Inválido 🚫', 'Não encontramos nenhuma família com esse código.');
         return; 
       }
     }
@@ -102,8 +127,7 @@ export default function FamilyPetScreen({ navigation }: Props) {
     const jaEstaNaLista = novaListaCuidadores.some(c => c.nome.replace(' (Você)', '').trim() === nomeTratado);
     
     if (jaEstaNaLista && fluxoAberto === 'entrando') {
-        if (Platform.OS === 'web') window.alert('Você já faz parte desta família!');
-        else Alert.alert('Aviso', 'Você já faz parte desta família!');
+        showAlert('Aviso', 'Você já faz parte desta família!');
         setFluxoAberto('nenhum');
         setMinhaFuncao('');
         setCodigoConvite('');
@@ -119,7 +143,15 @@ export default function FamilyPetScreen({ navigation }: Props) {
     }
     
     if (!jaEstaNaLista) {
-      const meuUsuario: Cuidador = { id: Date.now().toString(), nome: nomeTratado, funcao: fluxoAberto === 'criando' ? 'Dono(a) da Família' : minhaFuncao };
+      const pontosSalvos = await AsyncStorage.getItem(STORAGE_KEYS.PONTOS_XP);
+      const xpAtual = pontosSalvos ? Number(pontosSalvos) : 0;
+
+      const meuUsuario: Cuidador = { 
+        id: Date.now().toString(), 
+        nome: nomeTratado, 
+        funcao: fluxoAberto === 'criando' ? 'Dono(a) da Família' : minhaFuncao,
+        xp: xpAtual
+      };
       novaListaCuidadores = [meuUsuario, ...novaListaCuidadores];
       setCuidadores(novaListaCuidadores);
       await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(novaListaCuidadores));
@@ -134,26 +166,36 @@ export default function FamilyPetScreen({ navigation }: Props) {
     }
 
     await AsyncStorage.setItem(STORAGE_KEYS.FAMILIA_ATIVA, 'sim');
-    setTemFamilia(true); setFluxoAberto('nenhum'); setMinhaFuncao(''); setCodigoConvite(''); setNomeFamilia('');
-  };
+    setTemFamilia(true); 
+    setFluxoAberto('nenhum'); 
+    setMinhaFuncao(''); 
+    setCodigoConvite(''); 
+    setNomeFamilia('');
+  }, [fluxoAberto, nomeFamilia, codigoConvite, minhaFuncao, cuidadores, usuarioLogado]);
 
-  const sairFamilia = async () => {
+  // Sair da família com useCallback
+  const sairFamilia = useCallback(async () => {
     const novaLista = cuidadores.filter(c => c.nome.replace(' (Você)', '') !== usuarioLogado);
     setCuidadores(novaLista);
     await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(novaLista));
     await AsyncStorage.removeItem(STORAGE_KEYS.FAMILIA_ATIVA);
     await AsyncStorage.removeItem(STORAGE_KEYS.CODIGO_FAMILIA);
-    if (novaLista.length === 0) { await AsyncStorage.removeItem(STORAGE_KEYS.RECADOS); setRecados([]); }
+    if (novaLista.length === 0) { 
+      await AsyncStorage.removeItem(STORAGE_KEYS.RECADOS); 
+      setRecados([]); 
+    }
     setTemFamilia(false);
-  };
+  }, [cuidadores, usuarioLogado]);
 
-  const removerCuidador = async (id: string) => {
+  // Remover cuidador com useCallback
+  const removerCuidador = useCallback(async (id: string) => {
     const novaLista = cuidadores.filter((c) => c.id !== id);
     setCuidadores(novaLista);
     await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(novaLista));
-  };
+  }, [cuidadores]);
 
-  const salvarRecado = async () => {
+  // Salvar ou editar recados com useCallback
+  const salvarRecado = useCallback(async () => {
     if (novoRecado.trim() === '') return; 
     
     const dataHj = new Date();
@@ -169,19 +211,35 @@ export default function FamilyPetScreen({ navigation }: Props) {
     } else {
       novaLista = [{ id: Date.now().toString(), texto: novoRecado, hora: dataHoraFormatada, autor: usuarioLogado }, ...recados]; 
     }
-    setRecados(novaLista); setNovoRecado(''); await AsyncStorage.setItem(STORAGE_KEYS.RECADOS, JSON.stringify(novaLista));
-  };
+    setRecados(novaLista); 
+    setNovoRecado(''); 
+    await AsyncStorage.setItem(STORAGE_KEYS.RECADOS, JSON.stringify(novaLista));
+  }, [novoRecado, recados, editandoId, usuarioLogado]);
 
-  const prepararEdicao = (recado: Recado) => { setNovoRecado(recado.texto); setEditandoId(recado.id); };
-  const removerRecado = async (id: string) => { const novaLista = recados.filter(r => r.id !== id); setRecados(novaLista); await AsyncStorage.setItem(STORAGE_KEYS.RECADOS, JSON.stringify(novaLista)); };
-  const getInitials = (name: string) => { if (!name) return '??'; return name.replace(' (Você)', '').substring(0, 2).toUpperCase(); };
+  // Prepara edição de recado
+  const prepararEdicao = useCallback((recado: Recado) => { 
+    setNovoRecado(recado.texto); 
+    setEditandoId(recado.id); 
+  }, []);
 
-  const alterarNomeFamilia = async () => {
+  // Remover recado
+  const removerRecado = useCallback(async (id: string) => { 
+    const novaLista = recados.filter(r => r.id !== id); 
+    setRecados(novaLista); 
+    await AsyncStorage.setItem(STORAGE_KEYS.RECADOS, JSON.stringify(novaLista)); 
+  }, [recados]);
+
+  // Alterar nome da família
+  const alterarNomeFamilia = useCallback(async () => {
     if (inputNovoNome.trim() === '') return;
     await AsyncStorage.setItem(STORAGE_KEYS.NOME_FAMILIA, inputNovoNome);
     setNomeDaFamiliaAtual(inputNovoNome);
     setModalNomeAberto(false);
-  };
+  }, [inputNovoNome]);
+
+  // Verificação do papel de dono do usuário
+  const meuPerfil = cuidadores.find(c => c.nome.replace(' (Você)', '') === usuarioLogado);
+  const souDono = meuPerfil?.funcao === 'Dono(a) da Família';
 
   if (!temFamilia) {
     return (
@@ -230,9 +288,6 @@ export default function FamilyPetScreen({ navigation }: Props) {
     );
   }
 
-  const meuPerfil = cuidadores.find(c => c.nome.replace(' (Você)', '') === usuarioLogado);
-  const souDono = meuPerfil?.funcao === 'Dono(a) da Família';
-
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
@@ -246,18 +301,21 @@ export default function FamilyPetScreen({ navigation }: Props) {
           {petsDaFamilia.length === 0 ? (
             <Text style={{ color: '#999', fontStyle: 'italic' }}>Nenhum pet cadastrado no Perfil ainda.</Text>
           ) : (
-            petsDaFamilia.map(pet => (
-              <View key={pet.id} style={{ alignItems: 'center', marginRight: 15 }}>
-                <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#0066FF', overflow: 'hidden' }}>
-                   {AVATARES_DISPONIVEIS.find(a => a.id === pet.avatarId) ? (
-                      <Image source={AVATARES_DISPONIVEIS.find(a => a.id === pet.avatarId)?.imagem} style={{ width: '100%', height: '100%' }} />
-                   ) : (
+            petsDaFamilia.map(pet => {
+              const avatarImage = getAvatarById(pet.avatarId);
+              return (
+                <View key={pet.id} style={{ alignItems: 'center', marginRight: 15 }}>
+                  <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#0066FF', overflow: 'hidden' }}>
+                    {avatarImage ? (
+                      <Image source={avatarImage} style={{ width: '100%', height: '100%' }} />
+                    ) : (
                       <MaterialCommunityIcons name="paw" size={30} color="#0066FF" />
-                   )}
+                    )}
+                  </View>
+                  <Text style={{ marginTop: 5, fontWeight: 'bold', color: '#333' }}>{pet.nome.split(' ')[0]}</Text>
                 </View>
-                <Text style={{ marginTop: 5, fontWeight: 'bold', color: '#333' }}>{pet.nome.split(' ')[0]}</Text>
-              </View>
-            ))
+              );
+            })
           )}
         </ScrollView>
 

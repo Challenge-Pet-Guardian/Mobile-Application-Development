@@ -76,7 +76,7 @@ export function useHome() {
         }
     };
 
-    const atualizarOfensivaReal = async () => {
+    const atualizarOfensivaReal = useCallback(async () => {
         try {
             const hoje = new Date().toDateString();
             const ultimaDataOfensiva = await AsyncStorage.getItem(STORAGE_KEYS.DATA_ULTIMA_OFENSIVA);
@@ -99,9 +99,9 @@ export function useHome() {
             await AsyncStorage.setItem(STORAGE_KEYS.DATA_ULTIMA_OFENSIVA, hoje);
             setOfensivaTotal(ofensivaAtual);
         } catch (e) { console.log(e); }
-    };
+    }, []);
 
-    const registrarXPIndividual = async (pontos: number) => {
+    const registrarXPIndividual = useCallback(async (pontos: number) => {
         try {
             const userDataString = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
             if (!userDataString) return;
@@ -119,9 +119,9 @@ export function useHome() {
                 await AsyncStorage.setItem(STORAGE_KEYS.CUIDADORES, JSON.stringify(listaCuidadores));
             }
         } catch (e) { console.log(e); }
-    };
+    }, []);
 
-    const gerarDiasDaSemana = async () => {
+    const gerarDiasDaSemana = useCallback(async () => {
         const hoje = new Date();
         const diaDaSemanaAtual = hoje.getDay(); 
         const distanciaParaSegunda = diaDaSemanaAtual === 0 ? 6 : diaDaSemanaAtual - 1;
@@ -162,8 +162,8 @@ export function useHome() {
                         if (tarefasDoDia.length === 0) {
                             status = 'futuro';
                         } else {
-                            const todasConcluidas = tarefasDoDia.every(t => t.concluida);
-                            status = todasConcluidas ? 'feito' : 'perdido';
+                              const todasConcluidas = tarefasDoDia.every(t => t.concluida);
+                              status = todasConcluidas ? 'feito' : 'perdido';
                         }
                     } else {
                         const diaDaSemana = dataAtual.getDay();
@@ -183,9 +183,9 @@ export function useHome() {
             dias.push({ id: i, dayLabel: letras[i], dayNumber: numeroDia, status: status });
         }
         setDiasOfensiva(dias);
-    };
+    }, []);
 
-    const handleCriarTarefa = async (titulo: string, descricao: string) => {
+    const handleCriarTarefa = useCallback(async (titulo: string, descricao: string) => {
         const novaTarefaParaService = {
             titulo: titulo.trim(),
             descricao: descricao.trim(),
@@ -198,9 +198,9 @@ export function useHome() {
         await TaskService.adicionarTarefaFamilia(novaTarefaParaService);
         const tarefasAtualizadas = await TaskService.carregarTarefasHoje();
         setTarefas(tarefasAtualizadas);
-    };
+    }, [petsDaFamilia]);
 
-    const alternarTarefaStatus = async (id: number) => {
+    const alternarTarefaStatus = useCallback(async (id: number) => {
         const tarefaClicada = tarefas.find(t => t.id === id);
         if (!tarefaClicada) return;
 
@@ -217,7 +217,7 @@ export function useHome() {
 
         if (isConcluindo) atualizarOfensivaReal(); 
         await registrarXPIndividual(mudancaXP);
-    };
+    }, [tarefas, xpTotal, atualizarOfensivaReal, registrarXPIndividual]);
 
     useFocusEffect(
         useCallback(() => {

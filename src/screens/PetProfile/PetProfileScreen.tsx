@@ -1,34 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, TextInput, KeyboardAvoidingView, Image, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Header } from '../../components/Header';
 import { STORAGE_KEYS } from '../../constants/Keys';
 import { Pet } from '../../types/models';
-import { AVATARES_DISPONIVEIS } from '../../constants/Avatares';
+import { AVATARES_DISPONIVEIS, getAvatarById } from '../../constants/Avatares';
+
+interface PetFormState {
+  avatarId: string;
+  nome: string;
+  raca: string;
+  idade: string;
+  peso: string;
+  sexo: string;
+  castrado: string;
+  ultimaVacina: string;
+  ultimaConsulta: string;
+  veterinario: string;
+  alergias: string;
+  medicamentos: string;
+}
+
+const initialFormState: PetFormState = {
+  avatarId: '1',
+  nome: '',
+  raca: '',
+  idade: '',
+  peso: '',
+  sexo: '',
+  castrado: '',
+  ultimaVacina: '',
+  ultimaConsulta: '',
+  veterinario: '',
+  alergias: '',
+  medicamentos: '',
+};
 
 export default function PetProfileScreen() {
   const [meusPets, setMeusPets] = useState<Pet[]>([]);
   const [petAtualId, setPetAtualId] = useState<string | null>(null);
+  const [form, setForm] = useState<PetFormState>(initialFormState);
 
-  const [avatarEscolhidoId, setAvatarEscolhidoId] = useState<string>('1'); 
-  const [nome, setNome] = useState('');
-  const [raca, setRaca] = useState('');
-  const [idade, setIdade] = useState('');
-  const [peso, setPeso] = useState('');
-  const [sexo, setSexo] = useState('');
-  const [castrado, setCastrado] = useState('');
-  const [ultimaVacina, setUltimaVacina] = useState('');
-  const [ultimaConsulta, setUltimaConsulta] = useState('');
-  const [veterinario, setVeterinario] = useState('');
-  const [alergias, setAlergias] = useState('');
-  const [medicamentos, setMedicamentos] = useState('');
-
-  useEffect(() => {
-    carregarPets();
+  const selecionarPet = useCallback((pet: Pet) => {
+    setPetAtualId(pet.id || null);
+    setForm({
+      avatarId: pet.avatarId || '1',
+      nome: pet.nome || '',
+      raca: pet.raca || '',
+      idade: pet.idade || '',
+      peso: pet.peso || '',
+      sexo: pet.sexo || '',
+      castrado: pet.castrado || '',
+      ultimaVacina: pet.ultimaVacina || '',
+      ultimaConsulta: pet.ultimaConsulta || '',
+      veterinario: pet.veterinario || '',
+      alergias: pet.alergias || '',
+      medicamentos: pet.medicamentos || '',
+    });
   }, []);
 
-  const carregarPets = async () => {
+  const carregarPets = useCallback(async () => {
     try {
       const dados = await AsyncStorage.getItem(STORAGE_KEYS.LISTA_PETS);
       if (dados) {
@@ -41,43 +73,41 @@ export default function PetProfileScreen() {
     } catch (error) {
       console.log(error);
     }
-  };
+  }, [selecionarPet]);
 
-  const selecionarPet = (pet: Pet) => {
-    setPetAtualId(pet.id || null);
-    setAvatarEscolhidoId(pet.avatarId || '1');
-    setNome(pet.nome || '');
-    setRaca(pet.raca || '');
-    setIdade(pet.idade || '');
-    setPeso(pet.peso || '');
-    setSexo(pet.sexo || '');
-    setCastrado(pet.castrado || '');
-    setUltimaVacina(pet.ultimaVacina || '');
-    setUltimaConsulta(pet.ultimaConsulta || '');
-    setVeterinario(pet.veterinario || '');
-    setAlergias(pet.alergias || '');
-    setMedicamentos(pet.medicamentos || '');
-  };
+  useEffect(() => {
+    carregarPets();
+  }, [carregarPets]);
 
-  const prepararNovoPet = () => {
+  const prepararNovoPet = useCallback(() => {
     setPetAtualId(null);
-    setAvatarEscolhidoId('1');
-    setNome(''); setRaca(''); setIdade(''); setPeso(''); setSexo('');
-    setCastrado(''); setUltimaVacina(''); setUltimaConsulta(''); setVeterinario('');
-    setAlergias(''); setMedicamentos('');
-  };
+    setForm(initialFormState);
+  }, []);
 
-  const salvarDadosPet = async () => {
-    if (!nome) {
+  const handleInputChange = useCallback((campo: keyof PetFormState, valor: string) => {
+    setForm(prev => ({ ...prev, [campo]: valor }));
+  }, []);
+
+  const salvarDadosPet = useCallback(async () => {
+    if (!form.nome) {
       Alert.alert('Aviso', 'O nome do pet é obrigatório!');
       return;
     }
 
     const dadosDoFormulario: Pet = { 
       id: petAtualId || Date.now().toString(),
-      avatarId: avatarEscolhidoId,
-      nome, raca, idade, peso, sexo, castrado, ultimaVacina, ultimaConsulta,
-      veterinario, alergias, medicamentos 
+      avatarId: form.avatarId,
+      nome: form.nome,
+      raca: form.raca,
+      idade: form.idade,
+      peso: form.peso,
+      sexo: form.sexo,
+      castrado: form.castrado,
+      ultimaVacina: form.ultimaVacina,
+      ultimaConsulta: form.ultimaConsulta,
+      veterinario: form.veterinario,
+      alergias: form.alergias,
+      medicamentos: form.medicamentos 
     };
 
     try {
@@ -94,29 +124,9 @@ export default function PetProfileScreen() {
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar.');
     }
-  };
+  }, [form, petAtualId, meusPets]);
 
-  const confirmarExclusao = () => {
-    if (!petAtualId) return;
-
-    if (Platform.OS === 'web') {
-      const confirmou = window.confirm(`Tem certeza que deseja remover o(a) ${nome} da sua lista?`);
-      if (confirmou) {
-        excluirPet();
-      }
-    } else {
-      Alert.alert(
-        "Excluir Pet",
-        `Tem certeza que deseja remover o(a) ${nome} da sua lista?`,
-        [
-          { text: "Cancelar", style: "cancel" },
-          { text: "Excluir", style: "destructive", onPress: excluirPet }
-        ]
-      );
-    }
-  };
-
-  const excluirPet = async () => {
+  const excluirPet = useCallback(async () => {
     try {
       const novaLista = meusPets.filter(p => p.id !== petAtualId);
       setMeusPets(novaLista);
@@ -134,9 +144,29 @@ export default function PetProfileScreen() {
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível excluir.');
     }
-  };
+  }, [meusPets, petAtualId, selecionarPet, prepararNovoPet]);
 
-  const avatarAtual = AVATARES_DISPONIVEIS.find(a => a.id === avatarEscolhidoId)?.imagem;
+  const confirmarExclusao = useCallback(() => {
+    if (!petAtualId) return;
+
+    if (Platform.OS === 'web') {
+      const confirmou = window.confirm(`Tem certeza que deseja remover o(a) ${form.nome} da sua lista?`);
+      if (confirmou) {
+        excluirPet();
+      }
+    } else {
+      Alert.alert(
+        "Excluir Pet",
+        `Tem certeza que deseja remover o(a) ${form.nome} da sua lista?`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Excluir", style: "destructive", onPress: excluirPet }
+        ]
+      );
+    }
+  }, [petAtualId, form.nome, excluirPet]);
+
+  const avatarAtual = getAvatarById(form.avatarId);
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
@@ -149,12 +179,12 @@ export default function PetProfileScreen() {
         <View style={styles.carrosselContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.listaDePets}>
             {meusPets.map((pet) => {
-              const avatarItem = AVATARES_DISPONIVEIS.find(a => a.id === pet.avatarId);
+              const avatarImage = getAvatarById(pet.avatarId);
               return (
                 <TouchableOpacity key={pet.id ?? '0'} onPress={() => selecionarPet(pet)} style={styles.itemPetCarrossel}>
                   <View style={[styles.miniAvatarBorda, petAtualId === pet.id && styles.miniAvatarSelecionado]}>
-                    {avatarItem ? (
-                      <Image source={avatarItem.imagem} style={styles.miniAvatarImg} />
+                    {avatarImage ? (
+                      <Image source={avatarImage} style={styles.miniAvatarImg} />
                     ) : (
                       <MaterialCommunityIcons name="paw" size={24} color="#A0AEC0" />
                     )}
@@ -181,45 +211,51 @@ export default function PetProfileScreen() {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.avatarList}>
             {AVATARES_DISPONIVEIS.map((avatar) => (
-              <TouchableOpacity key={avatar.id} onPress={() => setAvatarEscolhidoId(avatar.id)} style={[styles.avatarOption, avatarEscolhidoId === avatar.id && styles.avatarOptionSelected]}><Image source={avatar.imagem} style={styles.avatarOptionImage} /></TouchableOpacity>
+              <TouchableOpacity 
+                key={avatar.id} 
+                onPress={() => handleInputChange('avatarId', avatar.id)} 
+                style={[styles.avatarOption, form.avatarId === avatar.id && styles.avatarOptionSelected]}
+              >
+                <Image source={avatar.imagem} style={styles.avatarOptionImage} />
+              </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
         <View style={styles.formContainer}>
           <Text style={styles.inputLabel}>Nome do Pet</Text>
-          <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholder="Ex: Bob" />
+          <TextInput style={styles.input} value={form.nome} onChangeText={(val) => handleInputChange('nome', val)} placeholder="Ex: Bob" />
 
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 10 }}>
               <Text style={styles.inputLabel}>Raça</Text>
-              <TextInput style={styles.input} value={raca} onChangeText={setRaca} placeholder="Ex: Husky" />
+              <TextInput style={styles.input} value={form.raca} onChangeText={(val) => handleInputChange('raca', val)} placeholder="Ex: Husky" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>Idade</Text>
-              <TextInput style={styles.input} value={idade} onChangeText={setIdade} placeholder="Ex: 4 anos" />
+              <TextInput style={styles.input} value={form.idade} onChangeText={(val) => handleInputChange('idade', val)} placeholder="Ex: 4 anos" />
             </View>
           </View>
 
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 10 }}>
               <Text style={styles.inputLabel}>Peso</Text>
-              <TextInput style={styles.input} value={peso} onChangeText={setPeso} placeholder="Ex: 28 kg" />
+              <TextInput style={styles.input} value={form.peso} onChangeText={(val) => handleInputChange('peso', val)} placeholder="Ex: 28 kg" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>Sexo</Text>
-              <TextInput style={styles.input} value={sexo} onChangeText={setSexo} placeholder="Ex: Macho" />
+              <TextInput style={styles.input} value={form.sexo} onChangeText={(val) => handleInputChange('sexo', val)} placeholder="Ex: Macho" />
             </View>
           </View>
 
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 10 }}>
               <Text style={styles.inputLabel}>Castrado?</Text>
-              <TextInput style={styles.input} value={castrado} onChangeText={setCastrado} placeholder="Sim ou Não" />
+              <TextInput style={styles.input} value={form.castrado} onChangeText={(val) => handleInputChange('castrado', val)} placeholder="Sim ou Não" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>Última Vacina</Text>
-              <TextInput style={styles.input} value={ultimaVacina} onChangeText={setUltimaVacina} placeholder="DD/MM/AAAA" />
+              <TextInput style={styles.input} value={form.ultimaVacina} onChangeText={(val) => handleInputChange('ultimaVacina', val)} placeholder="DD/MM/AAAA" />
             </View>
           </View>
 
@@ -229,19 +265,19 @@ export default function PetProfileScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1, marginRight: 10 }}>
                 <Text style={styles.inputLabel}>Veterinário</Text>
-                <TextInput style={styles.input} value={veterinario} onChangeText={setVeterinario} placeholder="Nome/Tel" />
+                <TextInput style={styles.input} value={form.veterinario} onChangeText={(val) => handleInputChange('veterinario', val)} placeholder="Nome/Tel" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.inputLabel}>Última Consulta</Text>
-                <TextInput style={styles.input} value={ultimaConsulta} onChangeText={setUltimaConsulta} placeholder="DD/MM/AAAA" />
+                <TextInput style={styles.input} value={form.ultimaConsulta} onChangeText={(val) => handleInputChange('ultimaConsulta', val)} placeholder="DD/MM/AAAA" />
               </View>
             </View>
 
             <Text style={styles.inputLabel}>Alergias ou Restrições</Text>
-            <TextInput style={styles.input} value={alergias} onChangeText={setAlergias} placeholder="Ex: Alergia a picada de pulga..." />
+            <TextInput style={styles.input} value={form.alergias} onChangeText={(val) => handleInputChange('alergias', val)} placeholder="Ex: Alergia a picada de pulga..." />
 
             <Text style={styles.inputLabel}>Medicamentos Contínuos</Text>
-            <TextInput style={styles.input} value={medicamentos} onChangeText={setMedicamentos} placeholder="Remédios que ele toma sempre" />
+            <TextInput style={styles.input} value={form.medicamentos} onChangeText={(val) => handleInputChange('medicamentos', val)} placeholder="Remédios que ele toma sempre" />
           </View>
 
           <TouchableOpacity style={styles.btnSalvar} onPress={salvarDadosPet}>
