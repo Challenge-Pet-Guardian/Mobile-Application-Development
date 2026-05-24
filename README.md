@@ -6,13 +6,9 @@
 
 ---
 
-## Repositório Github
+## Repositório Github e Vídeo de Demonstração
 
-[Repositório Github](https://github.com/Challenge-Pet-Guardian/Mobile-Application-Development)
-
-## Vídeo de Demonstração
-
-[Vídeo Youtube](https://youtu.be/mh-b1xhxOx0)
+[Repositório Github](https://github.com/Challenge-Pet-Guardian/Mobile-Application-Development) | [Vídeo Youtube](https://youtu.be/mh-b1xhxOx0)
 
 ## 📱 Sobre o Projeto
 
