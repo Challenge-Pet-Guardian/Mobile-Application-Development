@@ -10,6 +10,10 @@
 
 [Repositório Github](https://github.com/Challenge-Pet-Guardian/Mobile-Application-Development) | [Vídeo Youtube](https://youtu.be/mh-b1xhxOx0)
 
+## Link Repositório GitHub Classroom
+
+[Link Repositório](https://github.com/Challenge-Pet-Guardian/Mobile-Application-Development.git)
+
 ## 📱 Sobre o Projeto
 
 O **PetGuardian** é um aplicativo mobile desenvolvido em **React Native com Expo**, focado em facilitar e gamificar a rotina de cuidados com animais de estimação. Através da criação de **"Famílias"** (grupos de cuidadores), os tutores podem sincronizar tarefas diárias, registrar o histórico clínico e acompanhar o desenvolvimento do pet de forma colaborativa, evitando falhas no cuidado ou doses duplicadas de medicação.
