@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { Text, View, Image, StyleSheet, ScrollView, Platform, ActivityIndicator, TouchableOpacity, TextInput, KeyboardAvoidingView, Alert } from "react-native";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Header } from "../../components/Header";
-import { StreakCard } from "../../components/StreakCard";
+import { StreakCard } from "../../components/streakCard";
 import { EmptyState } from "../../components/EmptyState";
 import { TipCard } from "../../components/TipCard";
 import { TaskItem } from "../../components/TaskItem";
